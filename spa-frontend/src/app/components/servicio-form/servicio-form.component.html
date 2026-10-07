@@ -1,0 +1,112 @@
+<div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+  <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+    <div>
+      <h2 class="text-2xl font-bold text-gray-900">{{ isEditMode ? 'Editar Servicio' : 'Crear Nuevo Servicio' }}</h2>
+      <p class="text-sm text-gray-500 mt-1">{{ isEditMode ? 'Modificá los datos del servicio' : 'Completá los datos para registrar un nuevo servicio' }}</p>
+    </div>
+    <button type="button" (click)="closeModal.emit()" class="text-gray-400 hover:text-gray-600 transition p-1">
+      <i class="fas fa-times text-xl"></i>
+    </button>
+  </div>
+
+  <form [formGroup]="servicioForm" (ngSubmit)="onSubmit()">
+    <div class="space-y-5">
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-3">Tipo de Servicio</label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition"
+            [ngClass]="servicioForm.get('tipoServicio')?.value === 'principal' ? 'border-rosewood-500 bg-rosewood-50' : 'border-gray-200 hover:border-gray-300'">
+            <input type="radio" formControlName="tipoServicio" value="principal" class="h-4 w-4 text-rosewood-600">
+            <div>
+              <span class="font-medium text-gray-800 text-sm">Principal</span>
+              <p class="text-xs text-gray-400">Servicio independiente</p>
+            </div>
+          </label>
+          <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition"
+            [ngClass]="servicioForm.get('tipoServicio')?.value === 'addon' ? 'border-rosewood-500 bg-rosewood-50' : 'border-gray-200 hover:border-gray-300'">
+            <input type="radio" formControlName="tipoServicio" value="addon" class="h-4 w-4 text-rosewood-600">
+            <div>
+              <span class="font-medium text-gray-800 text-sm">Add-on</span>
+              <p class="text-xs text-gray-400">Servicio adicional</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <label for="nombre" class="block text-sm font-medium text-gray-700 mb-1">Nombre del Servicio</label>
+        <input type="text" id="nombre" formControlName="nombre"
+          class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500 transition"
+          placeholder="Ej: Masaje Relajante">
+      </div>
+
+      <div>
+        <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+        <textarea id="descripcion" formControlName="descripcion" rows="3"
+          class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500 transition resize-none"
+          placeholder="Descripción del servicio..."></textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="duracion" class="block text-sm font-medium text-gray-700 mb-1">Duración (min)</label>
+          <input type="number" id="duracion" formControlName="duracion"
+            class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500 transition"
+            placeholder="60">
+        </div>
+        <div>
+          <label for="precio" class="block text-sm font-medium text-gray-700 mb-1">Precio (Bs.)</label>
+          <input type="number" id="precio" formControlName="precio"
+            class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500 transition"
+            placeholder="120">
+        </div>
+      </div>
+
+      @if (servicioForm.get('tipoServicio')?.value === 'addon') {
+      <div class="relative">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Servicio Principal</label>
+        <input type="text" [formControl]="parentServiceSearchCtrl"
+          (focus)="showResults.set(true)" (blur)="onSearchBlur()"
+          placeholder="Buscá el servicio principal..."
+          class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500 transition">
+        @if (selectedParentService()) {
+        <div class="mt-2 flex items-center gap-2 bg-rosewood-50 text-rosewood-700 rounded-lg p-2 text-sm">
+          <i class="fas fa-check-circle"></i>
+          <span>{{ selectedParentService()?.nombre }}</span>
+          <button type="button" (click)="clearParentService()" class="ml-auto text-rosewood-500 hover:text-rosewood-700">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        }
+        @if (showResults() && filteredServices().length > 0) {
+        <div class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-40 overflow-y-auto">
+          @for (servicio of filteredServices(); track servicio.id) {
+          <div (click)="selectParentService(servicio)" class="px-4 py-2.5 hover:bg-rosewood-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0">
+            {{ servicio.nombre }}
+          </div>
+        }
+        </div>
+        }
+      </div>
+      }
+
+      <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+        <input type="checkbox" id="activo" formControlName="activo"
+          class="h-5 w-5 text-rosewood-600 border-gray-300 rounded focus:ring-rosewood-500">
+        <label for="activo" class="text-sm font-medium text-gray-700 cursor-pointer">Servicio Activo</label>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-200">
+      <button type="button" (click)="closeModal.emit()"
+        class="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition font-medium">
+        Cancelar
+      </button>
+      <button type="submit" [disabled]="servicioForm.invalid"
+        class="px-6 py-2.5 bg-rosewood-600 text-white rounded-xl hover:bg-rosewood-700 disabled:bg-gray-300 disabled:text-gray-500 transition font-medium shadow-md shadow-rosewood-200 flex items-center gap-2">
+        <i class="fas" [ngClass]="isEditMode ? 'fa-save' : 'fa-plus'"></i>
+        {{ isEditMode ? 'Guardar Cambios' : 'Crear Servicio' }}
+      </button>
+    </div>
+  </form>
+</div>

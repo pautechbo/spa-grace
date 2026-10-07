@@ -1,0 +1,110 @@
+<div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+  <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+    <div>
+      <h2 class="text-2xl font-bold text-gray-900">{{ isEditMode ? 'Editar Empleado' : 'Crear Nuevo Empleado' }}</h2>
+      <p class="text-sm text-gray-500 mt-1">{{ isEditMode ? 'Modificá los datos del empleado' : 'Registrá un nuevo miembro del equipo' }}</p>
+    </div>
+    <button type="button" (click)="closeModal.emit()" class="text-gray-400 hover:text-gray-600 transition p-1">
+      <i class="fas fa-times text-xl"></i>
+    </button>
+  </div>
+
+  <form [formGroup]="empleadoForm" (ngSubmit)="onSubmit()">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="space-y-5">
+        <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wide flex items-center gap-2">
+          <i class="fas fa-user text-rosewood-500"></i> Datos del Usuario
+        </h3>
+        <div>
+          <label for="nombre" class="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
+          <input type="text" id="nombre" formControlName="nombre"
+            class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500 transition">
+        </div>
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input type="email" id="email" formControlName="email"
+            class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500 transition">
+        </div>
+        @if (!isEditMode) {
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+          <input type="password" id="password" formControlName="password"
+            class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500 transition">
+        </div>
+        }
+        <div>
+          <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+          <input type="text" id="username" formControlName="username"
+            class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500 transition">
+        </div>
+        <div>
+          <label for="rol" class="block text-sm font-medium text-gray-700 mb-1">Rol</label>
+          <select id="rol" formControlName="rol"
+            class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500 bg-white">
+            <option value="terapeuta">Terapeuta</option>
+            <option value="recepcionista">Recepcionista</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="space-y-5">
+        <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wide flex items-center gap-2">
+          <i class="fas fa-briefcase text-rosewood-500"></i> Datos del Empleado
+        </h3>
+        <div>
+          <label for="especialidad" class="block text-sm font-medium text-gray-700 mb-1">Especialidad</label>
+          <input type="text" id="especialidad" formControlName="especialidad"
+            class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500 transition"
+            placeholder="Ej: Masoterapeuta">
+        </div>
+        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+          <input type="checkbox" id="activo" formControlName="activo"
+            class="h-5 w-5 text-rosewood-600 border-gray-300 rounded focus:ring-rosewood-500">
+          <label for="activo" class="text-sm font-medium text-gray-700 cursor-pointer">Empleado Activo</label>
+        </div>
+
+        <div class="mt-6">
+          <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wide flex items-center gap-2 mb-3">
+            <i class="fas fa-spa text-rosewood-500"></i> Servicios Asignados
+          </h3>
+          <div class="max-h-56 overflow-y-auto space-y-2 border border-gray-200 rounded-xl p-3">
+            @for (servicio of allServices(); track servicio.id) {
+            <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition">
+              <input type="checkbox" [id]="'servicio-' + servicio.id"
+                [checked]="serviciosAsignados.has(servicio.id)"
+                (change)="onServiceChange(servicio.id, $event)"
+                class="h-4 w-4 text-rosewood-600 border-gray-300 rounded focus:ring-rosewood-500">
+              <span class="text-sm text-gray-700">{{ servicio.nombre }}</span>
+            </label>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    @if (submitError()) {
+    <div class="mt-4 bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-sm flex items-center gap-2">
+      <i class="fas fa-exclamation-circle"></i>
+      <span>{{ submitError() }}</span>
+    </div>
+    }
+
+    <div class="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-200">
+      <button type="button" (click)="closeModal.emit()"
+        class="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition font-medium">
+        Cancelar
+      </button>
+      <button type="submit" [disabled]="empleadoForm.invalid || isSubmitting()"
+        class="px-6 py-2.5 bg-rosewood-600 text-white rounded-xl hover:bg-rosewood-700 disabled:bg-gray-300 disabled:text-gray-500 transition font-medium shadow-md shadow-rosewood-200 flex items-center gap-2">
+        @if (isSubmitting()) {
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>Guardando...</span>
+        } @else {
+        <i class="fas fa-save"></i>
+        <span>{{ isEditMode ? 'Guardar Cambios' : 'Crear Empleado' }}</span>
+        }
+      </button>
+    </div>
+  </form>
+</div>

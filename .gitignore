@@ -1,0 +1,39 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Compilación
+dist/
+build/
+out-tsc/
+.angular/
+coverage/
+.nyc_output/
+
+# Secrets — nunca subir
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# SO
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+*.sublime-workspace
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Temp
+temp/
+.tmp/

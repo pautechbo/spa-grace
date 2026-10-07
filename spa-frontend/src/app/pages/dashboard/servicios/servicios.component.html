@@ -1,0 +1,104 @@
+<div class="bg-white p-8 rounded-xl shadow-lg relative">
+  <div class="flex justify-between items-center mb-8">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-800">Gestión de Servicios</h1>
+      <p class="text-gray-500 text-sm mt-1">Administrá los tratamientos y servicios del spa</p>
+    </div>
+    <button (click)="openModalParaCrear()"
+      class="inline-flex items-center gap-2 px-5 py-2.5 bg-rosewood-600 text-white rounded-xl hover:bg-rosewood-700 transition shadow-md shadow-rosewood-200 font-medium">
+      <i class="fas fa-plus"></i>
+      Nuevo Servicio
+    </button>
+  </div>
+
+  <!-- Buscador -->
+  <div class="relative mb-6">
+    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+    <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
+      placeholder="Buscá por nombre o descripción..."
+      class="w-full sm:w-80 pl-9 pr-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500">
+  </div>
+
+  @if (isLoading()) {
+  <div class="flex justify-center py-16">
+    <i class="fas fa-spinner fa-spin text-3xl text-rosewood-400"></i>
+  </div>
+  } @else if (filteredServicios().length > 0) {
+  <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+    @for (servicio of filteredServicios(); track servicio.id) {
+    <div class="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow bg-white relative group">
+      <div class="flex items-start justify-between mb-4">
+        <div class="w-12 h-12 bg-rosewood-100 rounded-xl flex items-center justify-center">
+          <i class="fas fa-spa text-rosewood-600 text-xl"></i>
+        </div>
+        <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button (click)="openModalParaEditar(servicio)"
+            class="w-8 h-8 bg-rosewood-50 rounded-lg flex items-center justify-center text-rosewood-600 hover:bg-rosewood-100 transition">
+            <i class="fas fa-pen text-xs"></i>
+          </button>
+          <button (click)="askForDelete(servicio)"
+            class="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-100 transition">
+            <i class="fas fa-trash text-xs"></i>
+          </button>
+        </div>
+      </div>
+      <h3 class="text-lg font-semibold text-gray-900">{{ servicio.nombre }}</h3>
+      @if (servicio.descripcion) {
+      <p class="text-sm text-gray-500 mt-1 line-clamp-2">{{ servicio.descripcion }}</p>
+      }
+      <div class="mt-4 flex items-center gap-3">
+        <span class="text-xs px-2.5 py-1 rounded-full font-medium"
+          [ngClass]="servicio.parent_servicio_id ? 'bg-gray-100 text-gray-600' : 'bg-rosewood-100 text-rosewood-700'">
+          {{ servicio.parent_servicio_id ? 'Add-on' : 'Principal' }}
+        </span>
+        <span class="text-xs px-2.5 py-1 rounded-full font-medium"
+          [ngClass]="servicio.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
+          {{ servicio.activo ? 'Activo' : 'Inactivo' }}
+        </span>
+      </div>
+      <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
+        <span class="text-sm text-gray-400"><i class="far fa-clock mr-1"></i>{{ servicio.duracion }} min</span>
+        <span class="text-lg font-bold text-rosewood-600">Bs. {{ servicio.precio }}</span>
+      </div>
+    </div>
+    }
+  </div>
+  } @else {
+  <div class="text-center py-16">
+    <i class="fas fa-spa text-5xl text-gray-300 mb-4"></i>
+    <p class="text-gray-500">No hay servicios registrados. ¡Crea el primero!</p>
+  </div>
+  }
+</div>
+
+@if (notification(); as notif) {
+<div class="fixed top-5 right-5 p-4 rounded-xl shadow-lg text-white z-50 flex items-center gap-3"
+  [ngClass]="{'bg-green-500': notif.type === 'success', 'bg-red-500': notif.type === 'error'}">
+  <i class="fas" [ngClass]="{'fa-check-circle': notif.type === 'success', 'fa-exclamation-circle': notif.type === 'error'}"></i>
+  {{ notif.message }}
+</div>
+}
+
+@if (isConfirmModalOpen()) {
+<div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50">
+  <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm">
+    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+    </div>
+    <h3 class="text-lg font-bold text-center mb-2">Confirmar Eliminación</h3>
+    <p class="text-gray-500 text-center text-sm">{{ confirmAction?.message }}</p>
+    <div class="flex justify-center gap-3 mt-6">
+      <button (click)="isConfirmModalOpen.set(false)" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition font-medium">Cancelar</button>
+      <button (click)="confirmAndDelete()" class="px-5 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-medium">Eliminar</button>
+    </div>
+  </div>
+</div>
+}
+
+@if (isModalOpen()) {
+<div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50">
+  <app-servicio-form (click)="$event.stopPropagation()" [servicioParaEditar]="servicioSeleccionado()"
+    (closeModal)="closeModal()" (servicioGuardado)="handleServicioGuardado()">
+  </app-servicio-form>
+</div>
+}

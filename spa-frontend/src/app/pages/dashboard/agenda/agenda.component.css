@@ -1,0 +1,125 @@
+:host ::ng-deep .fc {
+  font-size: 0.875rem;
+}
+
+:host ::ng-deep .fc .fc-toolbar-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+:host ::ng-deep .fc .fc-button-primary {
+  background-color: #cf2f58;
+  border-color: #cf2f58;
+}
+
+:host ::ng-deep .fc .fc-button-primary:hover {
+  background-color: #b01f45;
+  border-color: #b01f45;
+}
+
+:host ::ng-deep .fc .fc-button-primary:not(:disabled).fc-button-active {
+  background-color: #931c3d;
+  border-color: #931c3d;
+}
+
+:host ::ng-deep .fc .fc-button-primary:disabled {
+  background-color: #f4a9ba;
+  border-color: #f4a9ba;
+}
+
+:host ::ng-deep .fc .fc-daygrid-event {
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  border: none;
+  font-weight: 500;
+}
+
+:host ::ng-deep .fc .fc-timegrid-event {
+  border-radius: 6px;
+  padding: 4px 6px;
+  cursor: pointer;
+  border: none;
+}
+
+:host ::ng-deep .fc .fc-daygrid-day-frame {
+  cursor: pointer;
+}
+
+:host ::ng-deep .fc .fc-day-today {
+  background-color: #fdf2f4 !important;
+}
+
+:host ::ng-deep .fc .fc-daygrid-day-number {
+  color: #4b5563;
+  font-weight: 500;
+}
+
+:host ::ng-deep .fc .fc-col-header-cell-cushion {
+  color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+:host ::ng-deep .fc .fc-daygrid-more-link {
+  color: #cf2f58;
+  font-weight: 600;
+}
+
+:host ::ng-deep .fc .fc-popover {
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  border: none;
+}
+
+:host ::ng-deep .fc .fc-popover-title {
+  color: #1f2937;
+  font-weight: 700;
+}
+
+:host ::ng-deep .fc .fc-popover-header {
+  background: #fdf2f4;
+  border-radius: 12px 12px 0 0;
+  padding: 8px 12px;
+}
+
+:host ::ng-deep .fc .fc-scrollgrid {
+  border-radius: 8px;
+  overflow: hidden;
+  border-color: #e5e7eb;
+}
+
+:host ::ng-deep .fc th {
+  border-color: #e5e7eb;
+}
+
+:host ::ng-deep .fc td {
+  border-color: #e5e7eb;
+}
+
+:host ::ng-deep .fc .fc-button {
+  border-radius: 8px;
+  font-weight: 500;
+  padding: 6px 14px;
+}
+
+:host ::ng-deep .fc .fc-today-button {
+  background-color: #fdf2f4;
+  border-color: #f9d0d9;
+  color: #cf2f58;
+  font-weight: 600;
+}
+
+:host ::ng-deep .fc .fc-today-button:hover {
+  background-color: #fce7eb;
+  border-color: #f4a9ba;
+}
+
+:host ::ng-deep .fc .fc-today-button:disabled {
+  background-color: #f9d0d9;
+  border-color: #f4a9ba;
+  color: #ec7894;
+}

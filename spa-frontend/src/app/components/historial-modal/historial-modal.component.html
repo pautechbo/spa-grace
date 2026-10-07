@@ -1,0 +1,45 @@
+<div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+  <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+    <div>
+      <h2 class="text-2xl font-bold text-gray-900">Historial Clínico</h2>
+      <p class="text-sm text-gray-500">{{ clienteNombre }}</p>
+    </div>
+    <button (click)="closeModal.emit()" class="text-gray-400 hover:text-gray-600 p-1"><i class="fas fa-times text-xl"></i></button>
+  </div>
+
+  <!-- Nueva entrada -->
+  <div class="bg-rosewood-50 rounded-xl p-5 mb-6 space-y-3">
+    <h3 class="font-semibold text-gray-800">Nueva entrada</h3>
+    <div class="grid grid-cols-2 gap-3">
+      <input type="date" [(ngModel)]="newEntry.fecha" class="border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-rosewood-500">
+      <input type="text" [(ngModel)]="newEntry.diagnostico" placeholder="Diagnóstico" class="border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-rosewood-500">
+    </div>
+    <input type="text" [(ngModel)]="newEntry.tratamiento" placeholder="Tratamiento" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-rosewood-500">
+    <textarea [(ngModel)]="newEntry.notas" placeholder="Notas adicionales..." rows="2" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-rosewood-500"></textarea>
+    <button (click)="crearEntrada()" [disabled]="isCreating() || (!newEntry.diagnostico && !newEntry.tratamiento)"
+      class="px-4 py-2.5 bg-rosewood-600 text-white rounded-lg hover:bg-rosewood-700 disabled:bg-gray-300 transition font-medium text-sm">
+      <i class="fas fa-plus mr-2"></i>{{ isCreating() ? 'Guardando...' : 'Agregar entrada' }}
+    </button>
+  </div>
+
+  <!-- Listado -->
+  @if (isLoading()) {
+  <div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl text-rosewood-400"></i></div>
+  } @else if (entries().length === 0) {
+  <div class="text-center py-8 text-gray-400"><i class="fas fa-notes-medical text-4xl mb-3"></i><p>Sin historial clínico aún</p></div>
+  } @else {
+  <div class="space-y-4">
+    @for (e of entries(); track e.id) {
+    <div class="border border-gray-200 rounded-xl p-4">
+      <div class="flex justify-between items-start mb-2">
+        <span class="text-sm font-semibold text-rosewood-600">{{ e.fecha }}</span>
+        @if (e.turno) { <span class="text-xs text-gray-400">Turno #{{ e.turno.id }}</span> }
+      </div>
+      @if (e.diagnostico) { <p class="text-sm"><span class="font-medium text-gray-700">Dx:</span> {{ e.diagnostico }}</p> }
+      @if (e.tratamiento) { <p class="text-sm"><span class="font-medium text-gray-700">Tx:</span> {{ e.tratamiento }}</p> }
+      @if (e.notas) { <p class="text-sm text-gray-500 mt-1">{{ e.notas }}</p> }
+    </div>
+    }
+  </div>
+  }
+</div>

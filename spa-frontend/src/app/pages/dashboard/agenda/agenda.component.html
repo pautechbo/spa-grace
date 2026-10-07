@@ -1,0 +1,401 @@
+<div class="bg-white p-8 rounded-xl shadow-lg relative">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">Agenda de Turnos</h1>
+    <div class="flex items-center gap-4">
+      @if (!esTerapeuta()) {
+      <div class="flex rounded-lg border border-gray-300 overflow-hidden">
+        <button (click)="viewMode.set('calendar')"
+          class="px-4 py-2 text-sm font-medium transition"
+          [ngClass]="{'bg-rosewood-600 text-white': viewMode() === 'calendar', 'bg-white text-gray-700 hover:bg-gray-50': viewMode() !== 'calendar'}">
+          Calendario
+        </button>
+        <button (click)="viewMode.set('table')"
+          class="px-4 py-2 text-sm font-medium transition"
+          [ngClass]="{'bg-rosewood-600 text-white': viewMode() === 'table', 'bg-white text-gray-700 hover:bg-gray-50': viewMode() !== 'table'}">
+          Tabla
+        </button>
+      </div>
+      }
+      @if (!esTerapeuta()) {
+      <button (click)="openTurnoModalParaCrear()"
+        class="px-4 py-2 bg-rosewood-600 text-white rounded-lg hover:bg-rosewood-700 transition duration-200">
+        + Nuevo Turno
+      </button>
+      }
+    </div>
+  </div>
+
+  <!-- Buscador -->
+  <div class="relative mb-4">
+    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+    <input type="text" [formControl]="searchControl"
+      placeholder="Buscá por cliente, empleado o servicio..."
+      class="w-full sm:w-96 pl-9 pr-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500">
+  </div>
+
+  <!-- Leyenda de colores -->
+  <div class="flex flex-wrap gap-4 mb-4 text-sm">
+    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-yellow-400 inline-block"></span> Pendiente</span>
+    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-rosewood-500 inline-block"></span> Confirmado</span>
+    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span> Atendido</span>
+    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span> Cancelado</span>
+    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-gray-400 inline-block"></span> Ausente</span>
+    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-purple-500 inline-block"></span> Reprogramado</span>
+  </div>
+
+  @if (viewMode() === 'calendar' && !esTerapeuta()) {
+  <!-- Vista Calendario -->
+  <div class="mb-6 relative">
+    @if (isLoading()) {
+    <div class="text-center py-10">
+      <p class="text-gray-500">Cargando calendario...</p>
+    </div>
+    } @else {
+    <full-calendar [options]="calendarOptions()"></full-calendar>
+    }
+
+    <!-- Popup de acciones en el calendario -->
+    @if (turnoAccionCalendar(); as turno) {
+    <div class="calendar-popup fixed z-[70]" [style.left.px]="(calendarPopupPos()?.x ?? 0) - 120"
+      [style.top.px]="(calendarPopupPos()?.y ?? 0) - 10">
+      <div class="bg-white rounded-xl shadow-2xl border border-gray-200 w-56 overflow-hidden">
+        <div class="px-4 py-3 bg-rosewood-50 border-b border-rosewood-100">
+          <p class="font-semibold text-gray-900 text-sm">{{ turno.cliente.nombre }}</p>
+          <p class="text-xs text-gray-500">{{ turno.fecha }} - {{ turno.hora }}</p>
+        </div>
+        <div class="py-1">
+          @if (esTerapeuta()) {
+            @if (turno.estado === 'confirmado' || turno.estado === 'pendiente') {
+            <button (click)="marcarAtendido(turno.id); cerrarPopupCalendar()"
+              class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 flex items-center gap-3">
+              <i class="fas fa-check-circle w-4 text-green-500"></i> Atendido con éxito
+            </button>
+            }
+            @if (turno.estado === 'atendido') {
+            <span class="block px-4 py-2.5 text-sm text-green-600 flex items-center gap-3">
+              <i class="fas fa-check-circle w-4 text-green-500"></i> Atendido
+            </span>
+            }
+            <button (click)="openHistorialModal(turno); cerrarPopupCalendar()"
+              class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-rosewood-50 flex items-center gap-3 border-t border-gray-100">
+              <i class="fas fa-notes-medical w-4 text-rosewood-500"></i> Historial Clínico
+            </button>
+          } @else {
+            <!-- ADMIN / RECEPCIONISTA: acciones completas -->
+            @if(turno.estado === 'atendido') {
+              @if(!esTerapeuta() && turno.cobros[0] && turno.cobros[0].estado_pago !== 'pagado_completo') {
+              <button (click)="openPagoModal(turno); cerrarPopupCalendar()"
+                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-rosewood-50 flex items-center gap-3">
+                <i class="fas fa-credit-card w-4 text-rosewood-500"></i> Registrar Pago
+              </button>
+              }
+            }
+            @if(turno.estado === 'cancelado' || turno.estado === 'ausente') {
+              @if(turno.cobros[0] && turno.cobros[0].estado_pago === 'adelanto_pagado') {
+              <button (click)="askForReimbursement(turno); cerrarPopupCalendar()"
+                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-rosewood-50 flex items-center gap-3">
+                <i class="fas fa-undo w-4 text-orange-500"></i> Reembolsar Adelanto
+              </button>
+              }
+            }
+            @if(turno.estado !== 'atendido' && turno.estado !== 'cancelado' && turno.estado !== 'ausente') {
+              @if (!esTerapeuta()) {
+              <button (click)="openTurnoModalParaEditar(turno); cerrarPopupCalendar()"
+                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-rosewood-50 flex items-center gap-3">
+                <i class="fas fa-pen w-4 text-rosewood-500"></i> Editar Turno
+              </button>
+              }
+              @if (turno.estado === 'pendiente' && !esTerapeuta()) {
+              <button (click)="confirmarTurno(turno.id); cerrarPopupCalendar()"
+                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-rosewood-50 flex items-center gap-3">
+                <i class="fas fa-check w-4 text-green-500"></i> Confirmar
+              </button>
+              }
+              @if (turno.estado === 'confirmado') {
+              <button (click)="marcarAtendido(turno.id); cerrarPopupCalendar()"
+                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 flex items-center gap-3">
+                <i class="fas fa-check-circle w-4 text-green-500"></i> Atendido con éxito
+              </button>
+              <button (click)="marcarAusente(turno.id); cerrarPopupCalendar()"
+                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-rosewood-50 flex items-center gap-3">
+                <i class="fas fa-user-slash w-4 text-gray-500"></i> Marcar Ausente
+              </button>
+              }
+              @if ((turno.estado === 'pendiente' || turno.estado === 'confirmado') && !esTerapeuta()) {
+              <button (click)="cancelarTurno(turno.id); cerrarPopupCalendar()"
+                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-rosewood-50 flex items-center gap-3">
+                <i class="fas fa-ban w-4 text-red-500"></i> Cancelar Turno
+              </button>
+              }
+              @if(turno.cobros[0] && turno.cobros[0].estado_pago !== 'pagado_completo' && !esTerapeuta()) {
+              <button (click)="openPagoModal(turno); cerrarPopupCalendar()"
+                class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-rosewood-50 flex items-center gap-3">
+                <i class="fas fa-credit-card w-4 text-rosewood-500"></i> Registrar Pago
+              </button>
+              }
+              @if (!esTerapeuta()) {
+              <button (click)="askForDelete(turno); cerrarPopupCalendar()"
+                class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 border-t border-gray-100">
+                <i class="fas fa-trash w-4"></i> Eliminar Turno
+              </button>
+              }
+            }
+          }
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+  }
+
+  @if (viewMode() === 'table') {
+  <!-- Pestañas de Navegación -->
+  <div class="border-b border-gray-200 mb-4">
+    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+      <button (click)="changeView('activos')"
+        [ngClass]="{'border-rosewood-500 text-rosewood-600': currentView() === 'activos', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': currentView() !== 'activos'}"
+        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+        Activos ({{ turnosActivos().length }})
+      </button>
+      <button (click)="changeView('atendidos')"
+        [ngClass]="{'border-rosewood-500 text-rosewood-600': currentView() === 'atendidos', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': currentView() !== 'atendidos'}"
+        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+        Atendidos ({{ turnosAtendidos().length }})
+      </button>
+      <button (click)="changeView('cancelados')"
+        [ngClass]="{'border-rosewood-500 text-rosewood-600': currentView() === 'cancelados', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': currentView() !== 'cancelados'}"
+        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+        Cancelados y Ausentes ({{ turnosCancelados().length }})
+      </button>
+    </nav>
+  </div>
+
+  <!-- Controles de Paginación -->
+  <div class="flex justify-between items-center mb-4 text-sm">
+    <div>
+      <span class="mr-2">Mostrar:</span>
+      <select (change)="onPageSizeChange($event)" class="border rounded-md px-2 py-1">
+        <option value="7">7</option>
+        <option value="10">10</option>
+        <option value="15">15</option>
+      </select>
+    </div>
+    <div>
+      <span class="mr-4">Página {{ currentPage() }} de {{ totalPages() }}</span>
+      <button (click)="goToPage(currentPage() - 1)" [disabled]="currentPage() === 1"
+        class="px-3 py-1 border rounded-md disabled:opacity-50">Anterior</button>
+      <button (click)="goToPage(currentPage() + 1)" [disabled]="currentPage() === totalPages()"
+        class="px-3 py-1 border rounded-md ml-2 disabled:opacity-50">Siguiente</button>
+    </div>
+  </div>
+
+  <!-- Contenedor de la Tabla (sin overflow-x-auto para que el dropdown no se recorte) -->
+  <div class="w-full">
+    @if (isLoading()) {
+    <div class="text-center py-10">
+      <p class="text-gray-500">Cargando agenda...</p>
+    </div>
+    } @else if (paginatedTurnos().length > 0) {
+    <div class="overflow-x-auto">
+    <table class="min-w-full bg-white">
+      <thead class="bg-gray-200">
+        <tr>
+          <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600">Cliente</th>
+          <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600">Servicios</th>
+          <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600">Empleado</th>
+          <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600">Fecha y Hora</th>
+          <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600">Estado Turno</th>
+          <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600">Estado Pago</th>
+          <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (turno of paginatedTurnos(); track turno.id) {
+        <tr class="border-b hover:bg-gray-50 transition-colors duration-500"
+          [ngClass]="{'bg-rosewood-50': turno.id === recentlyAddedTurnoId()}">
+          <td class="py-3 px-4">{{ turno.cliente.nombre }}</td>
+          <td class="py-3 px-4">
+            @if (turno.servicios && turno.servicios.length > 0) {
+            <ul class="list-disc list-inside text-sm space-y-1">
+              @for(servicio of turno.servicios; track servicio.id) {
+              <li>{{ servicio.nombre }}</li>
+              }
+            </ul>
+            } @else {
+            <span class="text-gray-400 text-xs">Sin Servicio Asignado</span>
+            }
+          </td>
+          <td class="py-3 px-4">{{ turno.empleado.usuario.nombre }}</td>
+          <td class="py-3 px-4 capitalize">{{ { fecha: turno.fecha, hora: turno.hora } | readableDate }}</td>
+          <td class="py-3 px-4">
+            <span class="px-2 py-1 text-xs font-semibold rounded-full capitalize" [ngClass]="{
+                          'bg-yellow-200 text-yellow-800': turno.estado === 'pendiente',
+                          'bg-green-200 text-green-800': turno.estado === 'atendido',
+                          'bg-rosewood-200 text-rosewood-800': turno.estado === 'confirmado',
+                          'bg-red-200 text-red-800': turno.estado === 'cancelado',
+                          'bg-gray-200 text-gray-800': turno.estado === 'ausente',
+                          'bg-purple-200 text-purple-800': turno.estado === 'reprogramado'
+                        }">{{ turno.estado }}</span>
+          </td>
+          <td class="py-3 px-4">
+            @if (turno.cobros && turno.cobros.length > 0 && turno.cobros[0]) {
+            <span class="px-2 py-1 text-xs font-semibold rounded-full capitalize" [ngClass]="{
+                            'bg-orange-200 text-orange-800': turno.cobros[0].estado_pago === 'pendiente_adelanto',
+                            'bg-teal-200 text-teal-800': turno.cobros[0].estado_pago === 'adelanto_pagado',
+                            'bg-emerald-200 text-emerald-800': turno.cobros[0].estado_pago === 'pagado_completo',
+                            'bg-gray-200 text-gray-800': 'reembolsado'
+                          }">
+              {{ turno.cobros[0].estado_pago.replace('_', ' ') }}
+            </span>
+            } @else {
+            <span class="text-gray-400 text-xs">No Registrado</span>
+            }
+          </td>
+          <td class="py-3 px-4 text-sm relative">
+            <div class="actions-menu-container">
+              <button (click)="toggleMenu(turno.id); $event.stopPropagation()"
+                class="px-3 py-1 border rounded-md text-gray-600 hover:bg-gray-100">
+                Acciones
+              </button>
+              @if (openMenuId() === turno.id) {
+              <div class="fixed z-[60] w-56 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden"
+                [style.top.px]="getDropdownTop()"
+                [style.right.px]="20">
+                <div class="py-1">
+                  @if (esTerapeuta()) {
+                    @if (turno.estado === 'confirmado' || turno.estado === 'pendiente') {
+                    <button (click)="marcarAtendido(turno.id)"
+                      class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 flex items-center gap-3">
+                      <i class="fas fa-check-circle w-4 text-green-500"></i> Atendido con éxito
+                    </button>
+                    }
+                    @if (turno.estado === 'atendido') {
+                    <span class="block px-4 py-2.5 text-sm text-green-600 flex items-center gap-3">
+                      <i class="fas fa-check-circle w-4 text-green-500"></i> Atendido
+                    </span>
+                    }
+                    <button (click)="openHistorialModal(turno)"
+                      class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-rosewood-50 flex items-center gap-3 border-t border-gray-100">
+                      <i class="fas fa-notes-medical w-4 text-rosewood-500"></i> Historial Clínico
+                    </button>
+                  } @else {
+                    @if(turno.estado === 'atendido') {
+                    @if(turno.cobros[0] && turno.cobros[0].estado_pago !== 'pagado_completo') {
+                    <button (click)="openPagoModal(turno)"
+                      class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-rosewood-50 flex items-center gap-3">
+                      <i class="fas fa-credit-card w-4 text-rosewood-500"></i> Registrar Pago
+                    </button>
+                    } @else { <span class="block px-4 py-2.5 text-sm text-gray-400"><i class="fas fa-check w-4 text-green-400"></i> Pagado</span> }
+                    }
+                    @if(turno.estado === 'cancelado' || turno.estado === 'ausente') {
+                    @if(turno.cobros[0] && turno.cobros[0].estado_pago === 'adelanto_pagado') {
+                    <button (click)="askForReimbursement(turno)"
+                      class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-rosewood-50 flex items-center gap-3">
+                      <i class="fas fa-undo w-4 text-orange-500"></i> Reembolsar Adelanto
+                    </button>
+                    } @else { <span class="block px-4 py-2.5 text-sm text-gray-400">Sin acciones</span> }
+                    }
+                    @if(turno.estado !== 'atendido' && turno.estado !== 'cancelado' && turno.estado !== 'ausente') {
+                    <button (click)="openTurnoModalParaEditar(turno)"
+                      class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-rosewood-50 flex items-center gap-3">
+                      <i class="fas fa-pen w-4 text-rosewood-500"></i> Editar Turno
+                    </button>
+                    @if (turno.estado === 'pendiente') {
+                    <button (click)="confirmarTurno(turno.id)"
+                      class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-rosewood-50 flex items-center gap-3">
+                      <i class="fas fa-check w-4 text-green-500"></i> Confirmar
+                    </button>
+                    }
+                    @if (turno.estado === 'confirmado') {
+                    <button (click)="marcarAtendido(turno.id)"
+                      class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 flex items-center gap-3">
+                      <i class="fas fa-check-circle w-4 text-green-500"></i> Atendido con éxito
+                    </button>
+                    <button (click)="marcarAusente(turno.id)"
+                      class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-rosewood-50 flex items-center gap-3">
+                      <i class="fas fa-user-slash w-4 text-gray-500"></i> Marcar Ausente
+                    </button>
+                    }
+                    @if (turno.estado === 'pendiente' || turno.estado === 'confirmado') {
+                    <button (click)="cancelarTurno(turno.id)"
+                      class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-rosewood-50 flex items-center gap-3">
+                      <i class="fas fa-ban w-4 text-red-500"></i> Cancelar Turno
+                    </button>
+                    }
+                    @if(turno.cobros[0] && turno.cobros[0].estado_pago !== 'pagado_completo') {
+                    <button (click)="openPagoModal(turno)"
+                      class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-rosewood-50 flex items-center gap-3">
+                      <i class="fas fa-credit-card w-4 text-rosewood-500"></i> Registrar Pago
+                    </button>
+                    }
+                    <button (click)="askForDelete(turno)"
+                      class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 border-t border-gray-100">
+                      <i class="fas fa-trash w-4"></i> Eliminar Turno
+                    </button>
+                    }
+                  }
+                </div>
+              </div>
+              }
+            </div>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+    </div>
+    } @else {
+    <div class="text-center py-10">
+      <p class="text-gray-500">No hay turnos para mostrar en esta categoría.</p>
+    </div>
+    }
+  </div>
+  }
+</div>
+
+@if (notification(); as notif) {
+<div class="fixed top-5 right-5 p-4 rounded-lg shadow-lg text-white z-[80] flex items-center gap-3"
+  [ngClass]="{'bg-green-500': notif.type === 'success', 'bg-red-500': notif.type === 'error'}">
+  {{ notif.message }}
+</div>
+}
+
+@if (isConfirmModalOpen()) {
+<div class="fixed inset-0 bg-black/50 flex justify-center items-center z-[90]">
+  <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm">
+    <h3 class="text-lg font-bold mb-4">Confirmar Acción</h3>
+    <p>{{ confirmAction?.message }}</p>
+    <div class="flex justify-end mt-6 space-x-3">
+      <button (click)="isConfirmModalOpen.set(false)" class="px-4 py-2 bg-gray-300 rounded-lg">Cancelar</button>
+      <button (click)="confirmAndDelete()" class="px-4 py-2 bg-red-600 text-white rounded-lg">Confirmar</button>
+    </div>
+  </div>
+</div>
+}
+
+@if (isTurnoModalOpen()) {
+<div (click)="onBackdropClick()"
+  class="fixed inset-0 bg-rosewood-950/40 backdrop-blur-sm flex justify-center items-center z-[90]">
+  <app-turno-form (click)="$event.stopPropagation()" [turnoParaEditar]="turnoSeleccionado()"
+    [initialDate]="initialDateSignal()" (closeModal)="closeModals()" (turnoGuardado)="handleTurnoGuardado($event)">
+  </app-turno-form>
+</div>
+}
+
+@if (isPagoModalOpen() && turnoSeleccionado()) {
+<div (click)="closeModals()"
+  class="fixed inset-0 bg-rosewood-950/40 backdrop-blur-sm flex justify-center items-center z-[90]">
+  <app-pago-form (click)="$event.stopPropagation()" [turno]="turnoSeleccionado()!" (closeModal)="closeModals()"
+    (pagoRegistrado)="handlePagoRegistrado()">
+  </app-pago-form>
+</div>
+}
+
+@if (isHistorialModalOpen() && clienteHistorial(); as ch) {
+<div (click)="closeModals()"
+  class="fixed inset-0 bg-rosewood-950/40 backdrop-blur-sm flex justify-center items-center z-[90]">
+  <app-historial-modal (click)="$event.stopPropagation()" [clienteId]="ch.id" [clienteNombre]="ch.nombre"
+    (closeModal)="closeModals()">
+  </app-historial-modal>
+</div>
+}

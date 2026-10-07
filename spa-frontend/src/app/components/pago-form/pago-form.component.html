@@ -1,0 +1,84 @@
+<div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md">
+  <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+    <h2 class="text-xl font-bold text-gray-900">Registrar Pago</h2>
+    <button type="button" (click)="closeModal.emit()" class="text-gray-400 hover:text-gray-600">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+
+  @if (turno && cobro) {
+  <div class="mb-4 p-4 bg-gradient-to-br from-gray-50 to-rosewood-50 rounded-xl border border-rosewood-100 space-y-1.5 text-sm">
+    <div class="flex justify-between">
+      <span class="text-gray-500">Cliente:</span>
+      <span class="font-medium">{{ turno.cliente.nombre }}</span>
+    </div>
+    <div class="flex justify-between">
+      <span class="text-gray-500">Servicios:</span>
+      <span class="font-medium text-right">{{ turno.servicios.length > 0 ? turno.servicios[0].nombre : '' }}</span>
+    </div>
+    @if (turno.servicios.length > 1) {
+    <div class="text-xs text-gray-400 text-right">+{{ turno.servicios.length - 1 }} servicio(s) más</div>
+    }
+    <div class="flex justify-between text-base pt-2 border-t border-rosewood-100">
+      <span class="font-semibold">Total:</span>
+      <span class="font-bold text-rosewood-700">Bs. {{ cobro.monto_total }}</span>
+    </div>
+    <div class="flex justify-between">
+      <span class="text-gray-500">Adelanto:</span>
+      <span class="font-medium text-green-600">Bs. {{ cobro.monto_adelanto }}</span>
+    </div>
+    <div class="flex justify-between">
+      <span class="text-gray-500">Pendiente:</span>
+      <span class="font-bold text-orange-600">Bs. {{ montoMaximo }}</span>
+    </div>
+  </div>
+
+  <form [formGroup]="pagoForm" (ngSubmit)="onSubmit()">
+    <div class="mb-4">
+      <label for="monto_pago" class="block text-sm font-medium text-gray-700 mb-1">Monto a Pagar</label>
+      <input type="number" id="monto_pago" formControlName="monto_pago" step="0.01"
+        [max]="montoMaximo"
+        class="w-full border border-gray-300 rounded-lg shadow-sm p-2.5 focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500">
+      @if (pagoForm.get('monto_pago')?.invalid && pagoForm.get('monto_pago')?.touched) {
+      <p class="text-red-500 text-xs mt-1">Ingresá un monto válido</p>
+      }
+    </div>
+
+    <div class="mb-4">
+      <label for="metodo_pago" class="block text-sm font-medium text-gray-700 mb-1">Método de Pago</label>
+      <select id="metodo_pago" formControlName="metodo_pago"
+        class="w-full border border-gray-300 rounded-lg shadow-sm p-2.5 focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500 bg-white">
+        <option>Efectivo</option>
+        <option>Tarjeta</option>
+        <option>Transferencia</option>
+        <option>QR</option>
+      </select>
+    </div>
+
+    <div class="flex items-center mb-4">
+      <input id="es_pago_final" type="checkbox" formControlName="es_pago_final"
+        class="h-4 w-4 text-rosewood-600 border-gray-300 rounded focus:ring-blue-500">
+      <label for="es_pago_final" class="ml-2 block text-sm text-gray-900">Marcar como pago completo</label>
+    </div>
+
+    @if (submitError()) {
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">{{ submitError() }}</div>
+    }
+
+    <div class="flex justify-end gap-3 mt-6 pt-3 border-t border-gray-200">
+      <button type="button" (click)="closeModal.emit()"
+        class="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium text-sm">
+        Cancelar
+      </button>
+      <button type="submit" [disabled]="pagoForm.invalid || isSubmitting()"
+        class="px-5 py-2.5 bg-rosewood-600 text-white rounded-lg hover:bg-rosewood-700 disabled:bg-gray-300 transition font-medium text-sm">
+        @if (isSubmitting()) { Procesando... } @else { Registrar Pago }
+      </button>
+    </div>
+  </form>
+  } @else {
+  <p class="text-center text-gray-400 py-4">No hay información de cobro disponible.</p>
+  }
+</div>

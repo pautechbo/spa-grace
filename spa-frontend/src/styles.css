@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  --color-rosewood-50: #fdf2f4;
+  --color-rosewood-100: #fce7eb;
+  --color-rosewood-200: #f9d0d9;
+  --color-rosewood-300: #f4a9ba;
+  --color-rosewood-400: #ec7894;
+  --color-rosewood-500: #e04d71;
+  --color-rosewood-600: #cf2f58;
+  --color-rosewood-700: #b01f45;
+  --color-rosewood-800: #931c3d;
+  --color-rosewood-900: #7e1b37;
+  --color-rosewood-950: #460a1b;
+}

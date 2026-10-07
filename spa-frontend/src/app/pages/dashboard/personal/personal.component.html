@@ -1,0 +1,141 @@
+<div class="bg-white p-8 rounded-xl shadow-lg relative">
+  <div class="flex justify-between items-center mb-8">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-800">Gestión de Personal</h1>
+      <p class="text-gray-500 text-sm mt-1">Administrá los empleados del spa</p>
+    </div>
+    <button (click)="openModalParaCrear()"
+      class="inline-flex items-center gap-2 px-5 py-2.5 bg-rosewood-600 text-white rounded-xl hover:bg-rosewood-700 transition shadow-md shadow-rosewood-200 font-medium">
+      <i class="fas fa-plus"></i>
+      Nuevo Empleado
+    </button>
+  </div>
+
+  <!-- Buscador -->
+  <div class="relative mb-6">
+    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+    <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
+      placeholder="Buscá por nombre, email o especialidad..."
+      class="w-full sm:w-80 pl-9 pr-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500">
+  </div>
+
+  @if (isLoading()) {
+  <div class="flex justify-center py-16">
+    <i class="fas fa-spinner fa-spin text-3xl text-rosewood-400"></i>
+  </div>
+  } @else if (filteredEmpleados().length > 0) {
+  <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+    @for (empleado of filteredEmpleados(); track empleado.id) {
+    <div class="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow bg-white relative group">
+      <div class="flex items-start gap-4">
+        <div class="w-14 h-14 bg-rosewood-100 rounded-full flex items-center justify-center flex-shrink-0">
+          <span class="text-rosewood-600 text-xl font-bold">{{ empleado.usuario.nombre.slice(0,2).toUpperCase() }}</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="font-semibold text-gray-900 truncate">{{ empleado.usuario.nombre }}</h3>
+              <p class="text-sm text-gray-500">{{ empleado.usuario.email }}</p>
+            </div>
+            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition">
+            <button (click)="openModalParaEditar(empleado)"
+              class="w-8 h-8 bg-rosewood-50 rounded-lg flex items-center justify-center text-rosewood-600 hover:bg-rosewood-100">
+              <i class="fas fa-pen text-xs"></i>
+            </button>
+            <button (click)="openHorarioModal(empleado)"
+              class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 hover:bg-blue-100">
+              <i class="fas fa-clock text-xs"></i>
+            </button>
+          </div>
+          </div>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <span class="text-xs px-2.5 py-1 rounded-full font-medium bg-rosewood-100 text-rosewood-700">
+              {{ empleado.usuario.rol }}
+            </span>
+            <span class="text-xs px-2.5 py-1 rounded-full font-medium"
+              [ngClass]="empleado.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
+              {{ empleado.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </div>
+          @if (empleado.especialidad) {
+          <p class="text-sm text-gray-600 mt-3">
+            <i class="fas fa-star text-rosewood-400 mr-1 text-xs"></i>
+            {{ empleado.especialidad }}
+          </p>
+          }
+          @if (empleado.servicios && empleado.servicios.length > 0) {
+          <div class="mt-3 flex flex-wrap gap-1.5">
+            @for (s of empleado.servicios; track s.id) {
+            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{{ s.nombre }}</span>
+            }
+          </div>
+          }
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+  } @else {
+  <div class="text-center py-16">
+    <i class="fas fa-users text-5xl text-gray-300 mb-4"></i>
+    <p class="text-gray-500">No hay personal registrado. ¡Crea el primero!</p>
+  </div>
+  }
+</div>
+
+@if (notification(); as notif) {
+<div class="fixed top-5 right-5 p-4 rounded-xl shadow-lg text-white z-50 flex items-center gap-3"
+  [ngClass]="{'bg-green-500': notif.type === 'success', 'bg-red-500': notif.type === 'error'}">
+  <i class="fas" [ngClass]="{'fa-check-circle': notif.type === 'success', 'fa-exclamation-circle': notif.type === 'error'}"></i>
+  {{ notif.message }}
+</div>
+}
+
+@if (isModalOpen()) {
+<div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50">
+  <app-empleado-form (click)="$event.stopPropagation()" [empleadoParaEditar]="empleadoSeleccionado()"
+    (closeModal)="closeModal()" (empleadoGuardado)="handleEmpleadoGuardado()">
+  </app-empleado-form>
+</div>
+}
+
+<!-- Modal de Horarios -->
+@if (isHorarioModalOpen() && empleadoHorario(); as emp) {
+<div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50">
+  <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-900">Horarios</h2>
+        <p class="text-sm text-gray-500">{{ emp.usuario.nombre }}</p>
+      </div>
+      <button (click)="closeHorarioModal()" class="text-gray-400 hover:text-gray-600 p-1"><i class="fas fa-times text-xl"></i></button>
+    </div>
+
+    <div class="space-y-3">
+      @for (dia of dias; track dia) {
+      <div class="flex items-center gap-4 p-3 rounded-xl transition" [ngClass]="getHorarioForDay(dia) ? 'bg-rosewood-50' : 'bg-gray-50'">
+        <input type="checkbox" [checked]="!!getHorarioForDay(dia)" (change)="toggleDia(dia)"
+          class="h-5 w-5 text-rosewood-600 rounded focus:ring-rosewood-500">
+        <span class="w-24 font-medium capitalize text-gray-700">{{ dia }}</span>
+        @if (getHorarioForDay(dia); as h) {
+        <div class="flex gap-2 items-center ml-auto">
+          <input type="time" [value]="h.hora_inicio" (change)="h.hora_inicio = $any($event.target).value"
+            class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-rosewood-500">
+          <span class="text-gray-400">a</span>
+          <input type="time" [value]="h.hora_fin" (change)="h.hora_fin = $any($event.target).value"
+            class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-rosewood-500">
+        </div>
+        }
+      </div>
+      }
+    </div>
+
+    <div class="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-200">
+      <button (click)="closeHorarioModal()" class="px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition font-medium">Cancelar</button>
+      <button (click)="saveHorarios()" class="px-5 py-2.5 bg-rosewood-600 text-white rounded-xl hover:bg-rosewood-700 transition font-medium">
+        <i class="fas fa-save mr-2"></i>Guardar Horarios
+      </button>
+    </div>
+  </div>
+</div>
+}
