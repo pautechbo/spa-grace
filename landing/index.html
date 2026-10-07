@@ -3,414 +3,1025 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- URL del dashboard Angular. En desarrollo: http://localhost:4200 -->
-  <meta name="spa-app-url" content="http://localhost:4200">
-  <title>SpaGrace - Bienestar y Relax</title>
+  <title>Spa Grace · Bienestar en Bolivia</title>
+  <meta name="description" content="Spa Grace — masajes, faciales y rituales de bienestar en Bolivia. Reservá tu turno online en La Paz, Cochabamba y Santa Cruz.">
+
+  <!-- ── Configuración de entorno ──────────────────────────────────────────
+       En local la landing la sirve el propio backend, por lo que ambos
+       valores pueden quedar vacíos y se usa same-origin.
+       En producción (Vercel) se sobrescriben con la URL real de la API. -->
+  <meta name="api-url" content="">
+  <meta name="spa-app-url" content="">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            rosewood: { 50: '#fdf2f4', 100: '#fce7eb', 200: '#f9d0d9', 300: '#f4a9ba', 400: '#ec7894', 500: '#e04d71', 600: '#cf2f58', 700: '#b01f45', 800: '#931c3d', 900: '#7e1b37', 950: '#460a1b' },
+            cream:  { 50:'#FDFBF8', 100:'#FAF6F0', 200:'#F3EBE1', 300:'#E8DBC9' },
+            wine:   { 50:'#FBF3F5', 100:'#F5E3E8', 200:'#E9C4CE', 300:'#D798AA',
+                      400:'#BE5C78', 500:'#A33457', 600:'#841F42', 700:'#661634',
+                      800:'#4A1027', 900:'#330A1B', 950:'#1E0611' },
+            gold:   { 300:'#E4CE9B', 400:'#D6B876', 500:'#C8A45C', 600:'#AC8742',
+                      700:'#8A6A33' },
+            ink:    { DEFAULT:'#1A1114', soft:'#3D3236', mute:'#7A6C71' }
           },
-          fontFamily: { display: ['Playfair Display', 'serif'], body: ['Inter', 'sans-serif'] },
+          fontFamily: {
+            display: ['Fraunces','Georgia','serif'],
+            body: ['Inter','system-ui','sans-serif']
+          }
         }
       }
     }
   </script>
+
   <style>
     html { scroll-behavior: smooth; }
-    .hero-gradient { background: linear-gradient(135deg, #fdf2f4 0%, #fce7eb 30%, #fff 60%, #f0fdf4 100%); }
-    .card-hover { transition: all 0.3s ease; }
-    .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
-    .fade-in { opacity: 0; transform: translateY(20px); transition: all 0.6s ease; }
-    .fade-in.show { opacity: 1; transform: translateY(0); }
-    .modal-overlay { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+    body { font-family: 'Inter', sans-serif; background: #FDFBF8; }
+    ::selection { background: #C8A45C; color: #1E0611; }
+
+    /* ── Texturas y fondos ── */
+    .grain::after {
+      content:''; position:absolute; inset:0; pointer-events:none; opacity:.35;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.28'/%3E%3C/svg%3E");
+    }
+    .hero-bg {
+      background:
+        radial-gradient(1100px 620px at 78% 8%, rgba(200,164,92,.22), transparent 62%),
+        radial-gradient(760px 540px at 8% 88%, rgba(163,52,87,.16), transparent 60%),
+        linear-gradient(160deg,#FDFBF8 0%,#FAF6F0 46%,#F3EBE1 100%);
+    }
+    .aurora {
+      position:absolute; border-radius:999px; filter:blur(72px); opacity:.5;
+      animation: drift 17s ease-in-out infinite alternate;
+    }
+    @keyframes drift {
+      from { transform: translate3d(0,0,0) scale(1); }
+      to   { transform: translate3d(34px,-26px,0) scale(1.13); }
+    }
+    .gold-rule { height:1px; background:linear-gradient(90deg,transparent,#C8A45C,transparent); }
+
+    /* ── Animaciones de entrada ── */
+    .reveal { opacity:0; transform: translateY(26px); transition: opacity .8s cubic-bezier(.22,1,.36,1), transform .8s cubic-bezier(.22,1,.36,1); }
+    .reveal.show { opacity:1; transform:none; }
+    .reveal[data-d="1"] { transition-delay:.09s } .reveal[data-d="2"] { transition-delay:.18s }
+    .reveal[data-d="3"] { transition-delay:.27s } .reveal[data-d="4"] { transition-delay:.36s }
+    .reveal[data-d="5"] { transition-delay:.45s }
+
+    .lift { transition: transform .45s cubic-bezier(.22,1,.36,1), box-shadow .45s ease, border-color .45s ease; }
+    .lift:hover { transform: translateY(-7px); box-shadow: 0 28px 56px -22px rgba(51,10,27,.36); }
+
+    .img-mask { transition: transform 1.1s cubic-bezier(.22,1,.36,1); }
+    .group:hover .img-mask { transform: scale(1.07); }
+
+    /* ── Navbar ── */
+    .nav-glass {
+      background: rgba(253,251,248,.82);
+      backdrop-filter: saturate(180%) blur(16px);
+      -webkit-backdrop-filter: saturate(180%) blur(16px);
+      border-bottom: 1px solid rgba(200,164,92,.28);
+      transition: box-shadow .4s ease, background .4s ease;
+    }
+    .nav-glass.scrolled { box-shadow: 0 12px 34px -24px rgba(51,10,27,.5); background: rgba(253,251,248,.95); }
+
+    /* ── Controles de formulario ── */
+    .field {
+      width:100%; padding:.8rem 1rem; border-radius:.85rem; font-size:.95rem;
+      background:#fff; color:#1A1114; border:1px solid #E8DBC9;
+      transition: border-color .25s, box-shadow .25s;
+    }
+    .field::placeholder { color:#B9A9AF; }
+    .field:focus { outline:none; border-color:#C8A45C; box-shadow:0 0 0 4px rgba(200,164,92,.18); }
+    .field.err { border-color:#A33457; box-shadow:0 0 0 4px rgba(163,52,87,.14); }
+    .lbl { display:block; font-size:.82rem; font-weight:600; color:#3D3236; margin-bottom:.4rem; letter-spacing:.01em; }
+    .hint { font-size:.74rem; color:#7A6C71; margin-top:.3rem; }
+    .msg  { font-size:.76rem; color:#A33457; margin-top:.35rem; display:none; }
+
+    .btn-primary {
+      display:inline-flex; align-items:center; justify-content:center; gap:.55rem;
+      background:linear-gradient(135deg,#841F42,#661634); color:#FDFBF8;
+      font-weight:600; letter-spacing:.01em; border-radius:.9rem; padding:.95rem 1.7rem;
+      transition: transform .3s ease, box-shadow .3s ease, filter .3s ease;
+      box-shadow:0 16px 34px -16px rgba(102,22,52,.75);
+    }
+    .btn-primary:hover { transform:translateY(-2px); filter:brightness(1.1); box-shadow:0 22px 44px -18px rgba(102,22,52,.8); }
+    .btn-primary:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+    .btn-ghost {
+      display:inline-flex; align-items:center; justify-content:center; gap:.55rem;
+      border:1px solid rgba(132,31,66,.35); color:#841F42; font-weight:600;
+      border-radius:.9rem; padding:.95rem 1.7rem; transition: background .3s, border-color .3s;
+    }
+    .btn-ghost:hover { background:rgba(132,31,66,.07); border-color:#841F42; }
+
+    /* ── Modal ── */
+    .overlay { background:rgba(30,6,17,.62); backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); }
+    .modal-in { animation: modalIn .42s cubic-bezier(.22,1,.36,1); }
+    @keyframes modalIn { from { opacity:0; transform: translateY(20px) scale(.97) } to { opacity:1; transform:none } }
+
+    .divider-or { display:flex; align-items:center; gap:.9rem; color:#B9A9AF; font-size:.78rem; }
+    .divider-or::before, .divider-or::after { content:''; flex:1; height:1px; background:#E8DBC9; }
+
+    .marquee { display:flex; gap:3.5rem; animation: slide 34s linear infinite; white-space:nowrap; }
+    @keyframes slide { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { opacity:1 !important; transform:none !important; }
+      .aurora, .marquee { animation:none !important; }
+      html { scroll-behavior:auto; }
+    }
   </style>
 </head>
-<body class="font-body text-gray-800 antialiased">
-  <!-- Navbar -->
-  <nav class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center h-16 lg:h-20">
-        <a href="/" class="flex items-center gap-2">
-          <span class="text-2xl lg:text-3xl font-display font-bold text-rosewood-700">SpaGrace</span>
-        </a>
-        <div class="hidden md:flex items-center gap-8">
-          <a href="#servicios" class="text-gray-600 hover:text-rosewood-600 font-medium transition">Servicios</a>
-          <a href="#registro" class="text-gray-600 hover:text-rosewood-600 font-medium transition">Registro</a>
-          <a href="#" onclick="openLogin()" class="px-5 py-2.5 border-2 border-rosewood-600 text-rosewood-600 rounded-xl hover:bg-rosewood-50 transition font-semibold text-sm">
-            <i class="fas fa-sign-in-alt mr-2"></i>Iniciar Sesión
-          </a>
-        </div>
-        <button id="mobile-menu-btn" class="md:hidden p-2 text-gray-600">
-          <i class="fas fa-bars text-xl"></i>
-        </button>
-      </div>
+
+<body class="text-ink antialiased">
+
+<!-- ════════ Barra superior ════════ -->
+<div class="bg-wine-800 text-cream-100 text-[13px]">
+  <div class="max-w-7xl mx-auto px-5 h-10 flex items-center justify-between">
+    <span class="hidden sm:flex items-center gap-2">
+      <i class="fas fa-map-marker-alt text-gold-400"></i>
+      La Paz · Cochabamba · Santa Cruz de la Sierra
+    </span>
+    <span class="flex items-center gap-4">
+      <a href="https://wa.me/59177777777" target="_blank" rel="noopener" class="hover:text-gold-300 transition">
+        <i class="fab fa-whatsapp mr-1.5"></i>+591 777 77777
+      </a>
+      <span class="hidden md:inline text-cream-300">Lun–Vie 8:00–20:00 · Sáb 9:00–18:00</span>
+    </span>
+  </div>
+</div>
+
+<!-- ════════ Navbar ════════ -->
+<nav id="nav" class="nav-glass sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-5 h-16 lg:h-[72px] flex items-center justify-between">
+    <a href="#" class="flex items-center gap-2.5 group">
+      <span class="w-9 h-9 rounded-full bg-gradient-to-br from-wine-600 to-wine-800 flex items-center justify-center text-cream-50 font-display font-semibold shadow-lg shadow-wine-800/25">
+        <i class="fas fa-spa text-[13px]"></i>
+      </span>
+      <span class="font-display text-[22px] font-semibold text-wine-800 tracking-tight">
+        Spa Grace
+      </span>
+    </a>
+
+    <div class="hidden lg:flex items-center gap-8 text-[15px] font-medium">
+      <a href="#servicios" class="text-ink-soft hover:text-wine-600 transition">Servicios</a>
+      <a href="#ritual" class="text-ink-soft hover:text-wine-600 transition">El ritual</a>
+      <a href="#membresias" class="text-ink-soft hover:text-wine-600 transition">Membresías</a>
+      <a href="#contacto" class="text-ink-soft hover:text-wine-600 transition">Contacto</a>
     </div>
-    <div id="mobile-menu" class="hidden md:hidden px-4 pb-4 space-y-3">
-      <a href="#servicios" class="block px-3 py-2 text-gray-600 hover:text-rosewood-600 font-medium">Servicios</a>
-      <a href="#registro" class="block px-3 py-2 text-gray-600 hover:text-rosewood-600 font-medium">Registro</a>
-      <a href="#" onclick="openLogin()" class="block px-3 py-2 text-center border border-rosewood-600 text-rosewood-600 rounded-lg font-semibold">
-        <i class="fas fa-sign-in-alt mr-2"></i>Iniciar Sesión
+
+    <div class="hidden lg:flex items-center gap-3">
+      <button onclick="openLogin()" class="btn-ghost !py-2.5 !px-5 !text-[14px]">
+        <i class="fas fa-right-to-bracket text-[13px]"></i> Iniciar sesión
+      </button>
+      <a href="#registro" class="btn-primary !py-2.5 !px-5 !text-[14px]">
+        Reservar turno
       </a>
     </div>
-  </nav>
 
-  <!-- Login Modal -->
-  <div id="login-modal" class="hidden fixed inset-0 z-[60] modal-overlay flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 relative animate-fade-in">
-      <button onclick="closeLogin()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl">
-        <i class="fas fa-times"></i>
-      </button>
-      <div class="text-center mb-6">
-        <h2 class="text-2xl font-display font-bold text-gray-900">Bienvenido</h2>
-        <p class="text-gray-500 text-sm mt-1">Iniciá sesión para acceder al dashboard</p>
-      </div>
-      <div id="login-error" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-sm mb-4"></div>
-      <form id="login-form" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
-          <input type="text" id="login-username" required
-            class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500 transition">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-          <input type="password" id="login-password" required
-            class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500 transition">
-        </div>
-        <button type="submit" id="login-btn"
-          class="w-full py-3 bg-rosewood-600 text-white rounded-xl hover:bg-rosewood-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition font-semibold shadow-lg shadow-rosewood-200">
-          <i class="fas fa-sign-in-alt mr-2"></i>Iniciar Sesión
-        </button>
-        <p class="text-center text-sm text-gray-500">
-          ¿No tenés cuenta?
-          <a href="#" onclick="closeLogin(); document.getElementById('registro').scrollIntoView({behavior:'smooth'});" class="text-rosewood-600 hover:underline font-semibold">Registrate</a>
-        </p>
-      </form>
-    </div>
+    <button id="burger" class="lg:hidden w-10 h-10 -mr-2 flex items-center justify-center text-wine-800" aria-label="Menú">
+      <i class="fas fa-bars text-xl"></i>
+    </button>
   </div>
 
-  <!-- Hero Section -->
-  <section class="hero-gradient pt-20 lg:pt-24">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-      <div class="lg:flex items-center gap-16">
-        <div class="lg:w-1/2 fade-in show">
-          <div class="inline-flex items-center gap-2 bg-rosewood-100 text-rosewood-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
-            <i class="fas fa-spa"></i>
-            <span>Bienestar Integral</span>
-          </div>
-          <h1 class="text-4xl lg:text-6xl font-display font-bold text-gray-900 leading-tight">
-            Tu momento de<br>
-            <span class="text-rosewood-600">bienestar</span> empieza aquí
-          </h1>
-          <p class="mt-6 text-lg text-gray-600 leading-relaxed max-w-lg">
-            En SpaGrace combinamos técnicas ancestrales con instalaciones modernas para ofrecerte una experiencia única de relajación y rejuvenecimiento.
-          </p>
-          <div class="mt-8 flex flex-wrap gap-4">
-            <a href="#registro" class="inline-flex items-center gap-2 px-8 py-3.5 bg-rosewood-600 text-white rounded-xl hover:bg-rosewood-700 transition shadow-lg shadow-rosewood-200 font-semibold">
-              <i class="fas fa-calendar-check"></i>
-              Reservá tu Turno
-            </a>
-            <a href="#servicios" class="inline-flex items-center gap-2 px-8 py-3.5 border-2 border-rosewood-600 text-rosewood-600 rounded-xl hover:bg-rosewood-50 transition font-semibold">
-              <i class="fas fa-arrow-down"></i>
-              Ver Servicios
-            </a>
-          </div>
-          <div class="mt-10 flex items-center gap-8 text-sm text-gray-500">
-            <div class="flex items-center gap-2"><i class="fas fa-star text-yellow-400"></i><span>4.9 rating</span></div>
-            <div class="flex items-center gap-2"><i class="fas fa-users text-rosewood-400"></i><span>500+ clientes</span></div>
-            <div class="flex items-center gap-2"><i class="fas fa-shield-alt text-green-500"></i><span>100% seguro</span></div>
-          </div>
+  <div id="mobile-menu" class="lg:hidden hidden border-t border-gold-300/40 px-5 pb-5 pt-3 space-y-1 bg-cream-50">
+    <a href="#servicios" class="block py-2.5 text-ink-soft font-medium">Servicios</a>
+    <a href="#ritual" class="block py-2.5 text-ink-soft font-medium">El ritual</a>
+    <a href="#membresias" class="block py-2.5 text-ink-soft font-medium">Membresías</a>
+    <a href="#contacto" class="block py-2.5 text-ink-soft font-medium">Contacto</a>
+    <div class="pt-3 grid gap-2.5">
+      <button onclick="openLogin()" class="btn-ghost w-full">Iniciar sesión</button>
+      <a href="#registro" class="btn-primary w-full">Reservar turno</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ════════ Hero ════════ -->
+<header class="hero-bg grain relative overflow-hidden">
+  <div class="aurora" style="width:460px;height:460px;background:#D6B876;top:-90px;right:-60px;"></div>
+  <div class="aurora" style="width:380px;height:380px;background:#D798AA;bottom:-120px;left:-80px;animation-delay:-6s"></div>
+
+  <div class="relative max-w-7xl mx-auto px-5 pt-16 pb-24 lg:pt-24 lg:pb-32">
+    <div class="lg:grid lg:grid-cols-12 lg:gap-12 items-center">
+
+      <div class="lg:col-span-6">
+        <div class="reveal show inline-flex items-center gap-2.5 bg-white/70 border border-gold-300/60 text-wine-700 px-4 py-2 rounded-full text-[13px] font-semibold mb-7 shadow-sm">
+          <span class="w-1.5 h-1.5 rounded-full bg-gold-500 animate-pulse"></span>
+          Bienestar integral · desde 2019
         </div>
-        <div class="lg:w-1/2 mt-12 lg:mt-0 fade-in show">
-          <div class="relative">
-            <div class="bg-gradient-to-br from-rosewood-100 to-rosewood-200 rounded-3xl p-8 lg:p-12 text-center">
-              <div class="text-8xl lg:text-9xl mb-4">💆</div>
-              <h3 class="text-xl font-display font-semibold text-rosewood-800">Espacio de Relax</h3>
-              <p class="text-rosewood-600 mt-1">Donde el estrés se desvanece</p>
-            </div>
-            <div class="absolute -bottom-4 -right-4 bg-white rounded-2xl shadow-xl p-4 hidden lg:block">
-              <div class="flex items-center gap-3">
-                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                  <i class="fas fa-check-circle text-green-600 text-xl"></i>
-                </div>
-                <div>
-                  <p class="font-bold text-gray-900">+50 Servicios</p>
-                  <p class="text-xs text-gray-500">Para tu bienestar</p>
-                </div>
-              </div>
-            </div>
-          </div>
+
+        <h1 class="reveal show font-display text-[2.6rem] leading-[1.06] sm:text-6xl lg:text-[4.1rem] font-semibold text-ink tracking-[-0.02em]">
+          El arte de<br>
+          <span class="italic text-wine-600">detenerse</span><span class="text-gold-500">.</span>
+        </h1>
+
+        <div class="reveal show gold-rule w-40 my-7"></div>
+
+        <p class="reveal show text-[17px] lg:text-lg text-ink-soft leading-relaxed max-w-lg">
+          Rituales de masaje, aromaterapia y cuidado facial inspirados en técnicas
+          andinas y tradiciones de la Amazonía boliviana, con productos naturales
+          de productores locales.
+        </p>
+
+        <div class="reveal show mt-9 flex flex-wrap gap-3.5">
+          <a href="#registro" class="btn-primary">
+            <i class="fas fa-calendar-check"></i> Reservá tu turno
+          </a>
+          <button onclick="openLogin()" class="btn-ghost bg-white/60">
+            <i class="fas fa-right-to-bracket"></i> Acceder al sistema
+          </button>
         </div>
+
+        <dl class="reveal show mt-12 grid grid-cols-3 gap-5 max-w-md">
+          <div class="border-l-2 border-gold-400 pl-4">
+            <dt class="font-display text-3xl font-semibold text-wine-700">4.9</dt>
+            <dd class="text-[12.5px] text-ink-mute mt-0.5">Valoración media</dd>
+          </div>
+          <div class="border-l-2 border-gold-400 pl-4">
+            <dt class="font-display text-3xl font-semibold text-wine-700">2.4k</dt>
+            <dd class="text-[12.5px] text-ink-mute mt-0.5">Clientes felices</dd>
+          </div>
+          <div class="border-l-2 border-gold-400 pl-4">
+            <dt class="font-display text-3xl font-semibold text-wine-700">18</dt>
+            <dd class="text-[12.5px] text-ink-mute mt-0.5">Terapeutas</dd>
+          </div>
+        </dl>
       </div>
-    </div>
-  </section>
 
-  <!-- Features Strip -->
-  <section class="bg-rosewood-700 py-10">
-    <div class="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
-      <div><i class="fas fa-leaf text-3xl mb-2"></i><p class="font-semibold">Natural</p></div>
-      <div><i class="fas fa-hand-sparkles text-3xl mb-2"></i><p class="font-semibold">Profesional</p></div>
-      <div><i class="fas fa-heart text-3xl mb-2"></i><p class="font-semibold">Personalizado</p></div>
-      <div><i class="fas fa-clock text-3xl mb-2"></i><p class="font-semibold">Flexible</p></div>
-    </div>
-  </section>
-
-  <!-- Servicios -->
-  <section id="servicios" class="py-20 lg:py-28 bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center mb-12 lg:mb-16">
-        <span class="text-rosewood-600 font-semibold text-sm tracking-widest uppercase">Nuestros Tratamientos</span>
-        <h2 class="text-3xl lg:text-4xl font-display font-bold text-gray-900 mt-3">Descubrí nuestros servicios</h2>
-        <p class="mt-4 text-gray-500 max-w-xl mx-auto">Variedad de tratamientos diseñados para tu bienestar integral.</p>
-      </div>
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8" id="services-grid"></div>
-    </div>
-  </section>
-
-  <!-- Registro -->
-  <section id="registro" class="py-20 lg:py-28 bg-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="lg:flex items-start gap-16">
-        <div class="lg:w-1/2 mb-10 lg:mb-0">
-          <span class="text-rosewood-600 font-semibold text-sm tracking-widest uppercase">Comienza Hoy</span>
-          <h2 class="text-3xl lg:text-4xl font-display font-bold text-gray-900 mt-3">Creá tu cuenta gratis</h2>
-          <p class="mt-4 text-gray-500">Registrate y accedé al instante a tu dashboard personal para reservar turnos y gestionar tus servicios.</p>
-          <div class="mt-8 space-y-4">
-            <div class="flex items-start gap-4">
-              <div class="w-10 h-10 bg-rosewood-100 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-calendar-check text-rosewood-600"></i></div>
-              <div><p class="font-semibold text-gray-900">Reservá turnos online</p><p class="text-sm text-gray-500">Elegí día, hora y servicio desde cualquier lugar.</p></div>
-            </div>
-            <div class="flex items-start gap-4">
-              <div class="w-10 h-10 bg-rosewood-100 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-history text-rosewood-600"></i></div>
-              <div><p class="font-semibold text-gray-900">Historial completo</p><p class="text-sm text-gray-500">Accedé a tu historial de visitas y tratamientos.</p></div>
-            </div>
-            <div class="flex items-start gap-4">
-              <div class="w-10 h-10 bg-rosewood-100 rounded-full flex items-center justify-center flex-shrink-0"><i class="fas fa-gift text-rosewood-600"></i></div>
-              <div><p class="font-semibold text-gray-900">Promociones exclusivas</p><p class="text-sm text-gray-500">Recibí descuentos y ofertas especiales.</p></div>
-            </div>
+      <div class="lg:col-span-6 mt-14 lg:mt-0">
+        <div class="relative reveal show">
+          <div class="absolute -inset-3 rounded-[2rem] border border-gold-400/40 pointer-events-none"></div>
+          <div class="relative rounded-[1.6rem] overflow-hidden shadow-[0_50px_90px_-40px_rgba(51,10,27,.55)] group">
+            <img class="img-mask w-full h-[340px] lg:h-[540px] object-cover"
+                 src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=1200&q=80"
+                 alt="Sesión de masaje relajante en Spa Grace">
+            <div class="absolute inset-0 bg-gradient-to-t from-wine-950/55 via-transparent to-transparent"></div>
           </div>
-        </div>
-        <div class="lg:w-1/2">
-          <div class="bg-gray-50 rounded-2xl p-8 shadow-sm border border-gray-100">
-            <div id="register-success" class="hidden bg-green-50 border border-green-200 text-green-700 rounded-xl p-6 text-center">
-              <i class="fas fa-check-circle text-4xl text-green-500 mb-3"></i>
-              <h3 class="text-lg font-bold">¡Registro exitoso!</h3>
-              <p class="mt-1">Te estamos redirigiendo a tu dashboard...</p>
-              <div class="mt-4 flex justify-center"><i class="fas fa-spinner fa-spin text-2xl text-rosewood-600"></i></div>
-            </div>
-            <form id="register-form" class="space-y-5">
+
+          <div class="absolute -bottom-6 left-4 right-4 sm:left-6 sm:right-auto sm:w-[280px] bg-white rounded-2xl p-4 shadow-[0_28px_60px_-28px_rgba(51,10,27,.6)] border border-cream-300">
+            <div class="flex items-center gap-3">
+              <span class="w-11 h-11 rounded-xl bg-cream-100 flex items-center justify-center">
+                <i class="fas fa-leaf text-wine-600"></i>
+              </span>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
-                <input type="text" id="nombre" required
-                  class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500 transition">
+                <p class="font-semibold text-ink text-[14.5px]">100% ingredientes naturales</p>
+                <p class="text-[12.5px] text-ink-mute">Origen boliviano certificado</p>
               </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input type="email" id="email" required
-                  class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500 transition">
-              </div>
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
-                  <input type="text" id="username" required
-                    class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500 transition">
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-                  <input type="tel" id="telefono"
-                    class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500 transition">
-                </div>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-                <input type="password" id="password" required minlength="6"
-                  class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-rosewood-500 focus:border-rosewood-500 transition">
-              </div>
-              <div id="register-error" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-sm"></div>
-              <button type="submit" id="register-btn"
-                class="w-full py-3.5 bg-rosewood-600 text-white rounded-xl hover:bg-rosewood-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition font-semibold shadow-lg shadow-rosewood-200">
-                <i class="fas fa-user-plus mr-2"></i>Crear Cuenta y Acceder
-              </button>
-              <p class="text-center text-sm text-gray-500">
-                ¿Ya tenés cuenta?
-                <a href="#" onclick="openLogin()" class="text-rosewood-600 hover:underline font-semibold">Iniciá Sesión</a>
-              </p>
-            </form>
+            </div>
+          </div>
+
+          <div class="absolute -top-5 right-4 sm:right-6 bg-wine-800 text-cream-50 rounded-2xl px-5 py-3.5 shadow-xl">
+            <p class="font-display text-2xl font-semibold leading-none">Bs. 120</p>
+            <p class="text-[11.5px] text-cream-300 mt-1">Masaje relajante 60 min</p>
           </div>
         </div>
       </div>
-    </div>
-  </section>
 
-  <!-- Testimonios -->
-  <section class="py-20 bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 text-center">
-      <span class="text-rosewood-600 font-semibold text-sm tracking-widest uppercase">Testimonios</span>
-      <h2 class="text-3xl font-display font-bold text-gray-900 mt-3">Lo que dicen nuestros clientes</h2>
-      <div class="grid md:grid-cols-3 gap-8 mt-12">
-        <div class="bg-white rounded-2xl p-6 shadow-sm card-hover">
-          <div class="flex text-yellow-400 mb-3"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-          <p class="text-gray-600">"La mejor experiencia de spa que he tenido. El masaje relajante fue increíble."</p>
-          <p class="mt-4 font-semibold text-gray-900">— María G.</p>
-        </div>
-        <div class="bg-white rounded-2xl p-6 shadow-sm card-hover">
-          <div class="flex text-yellow-400 mb-3"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-          <p class="text-gray-600">"Instalaciones hermosas y personal muy profesional. Recomiendo el facial premium."</p>
-          <p class="mt-4 font-semibold text-gray-900">— Carlos R.</p>
-        </div>
-        <div class="bg-white rounded-2xl p-6 shadow-sm card-hover">
-          <div class="flex text-yellow-400 mb-3"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-          <p class="text-gray-600">"Excelente atención, muy puntuales y la aromaterapia es una experiencia única."</p>
-          <p class="mt-4 font-semibold text-gray-900">— Laura M.</p>
-        </div>
+    </div>
+  </div>
+</header>
+
+<!-- ════════ Franja marquee ════════ -->
+<section class="bg-wine-900 text-cream-200 py-4 overflow-hidden border-y border-gold-600/30">
+  <div class="marquee text-[13px] tracking-[.2em] uppercase font-medium">
+    <span class="flex gap-14 shrink-0">
+      <span>Masajes terapéuticos</span><span class="text-gold-400">◆</span>
+      <span>Aromaterapia andina</span><span class="text-gold-400">◆</span>
+      <span>Rituales de quinoa</span><span class="text-gold-400">◆</span>
+      <span>Reflexología</span><span class="text-gold-400">◆</span>
+      <span>Faciales premium</span><span class="text-gold-400">◆</span>
+      <span>Sauna y baño turco</span><span class="text-gold-400">◆</span>
+    </span>
+    <span class="flex gap-14 shrink-0" aria-hidden="true">
+      <span>Masajes terapéuticos</span><span class="text-gold-400">◆</span>
+      <span>Aromaterapia andina</span><span class="text-gold-400">◆</span>
+      <span>Rituales de quinoa</span><span class="text-gold-400">◆</span>
+      <span>Reflexología</span><span class="text-gold-400">◆</span>
+      <span>Faciales premium</span><span class="text-gold-400">◆</span>
+      <span>Sauna y baño turco</span><span class="text-gold-400">◆</span>
+    </span>
+  </div>
+</section>
+
+<!-- ════════ Servicios (catálogo real desde la API) ════════ -->
+<section id="servicios" class="py-20 lg:py-28">
+  <div class="max-w-7xl mx-auto px-5">
+    <div class="lg:flex lg:items-end lg:justify-between gap-10 mb-12">
+      <div class="max-w-xl">
+        <p class="reveal text-gold-600 font-semibold text-[13px] tracking-[.18em] uppercase mb-3">Nuestro catálogo</p>
+        <h2 class="reveal font-display text-4xl lg:text-[3.1rem] leading-tight font-semibold text-ink tracking-[-0.02em]">
+          Tratamientos pensados<br>para cada cuerpo
+        </h2>
       </div>
+      <p class="reveal mt-5 lg:mt-0 text-ink-soft max-w-md leading-relaxed">
+        Precios en bolivianos. Cada sesión incluye valoración inicial,
+        ritual de apertura con hierbas y té de coca al finalizar.
+      </p>
     </div>
-  </section>
 
-  <!-- CTA Final -->
-  <section class="py-20 bg-gradient-to-r from-rosewood-700 to-rosewood-800 text-white text-center">
-    <div class="max-w-3xl mx-auto px-4">
-      <h2 class="text-3xl lg:text-4xl font-display font-bold">¿Listo para tu momento de relax?</h2>
-      <p class="mt-4 text-rosewood-200">Registrate hoy y accedé a tu dashboard personal.</p>
-      <a href="#registro" class="mt-8 inline-flex items-center gap-2 px-8 py-3.5 bg-white text-rosewood-700 rounded-xl hover:bg-rosewood-50 transition font-semibold shadow-lg">
-        <i class="fas fa-calendar-check"></i>Reservá Ahora
+    <div id="services-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+    <p class="reveal text-center text-[13.5px] text-ink-mute mt-9">
+      ¿Necesitás algo específico?
+      <a href="https://wa.me/59177777777" target="_blank" rel="noopener" class="text-wine-600 font-semibold hover:underline ml-1">
+        Escribinos por WhatsApp
       </a>
-    </div>
-  </section>
+    </p>
+  </div>
+</section>
 
-  <!-- Footer -->
-  <footer class="bg-gray-900 text-gray-400 py-16">
-    <div class="max-w-7xl mx-auto px-4">
-      <div class="grid md:grid-cols-4 gap-8">
-        <div><h3 class="text-xl font-display font-bold text-white">SpaGrace</h3><p class="mt-2 text-sm">Tu espacio de bienestar y relajación.</p></div>
-        <div><h4 class="font-semibold text-white mb-3">Servicios</h4><ul class="space-y-2 text-sm"><li>Masajes</li><li>Faciales</li><li>Aromaterapia</li><li>Sauna</li></ul></div>
-        <div><h4 class="font-semibold text-white mb-3">Horarios</h4><ul class="space-y-2 text-sm"><li>Lun - Vie: 8:00 - 20:00</li><li>Sáb: 9:00 - 18:00</li><li>Dom: Cerrado</li></ul></div>
-        <div><h4 class="font-semibold text-white mb-3">Contacto</h4><ul class="space-y-2 text-sm"><li><i class="fas fa-phone mr-2"></i>+591 777 77777</li><li><i class="fas fa-envelope mr-2"></i>info@spagrace.com</li><li><i class="fas fa-map-marker-alt mr-2"></i>La Paz, Bolivia</li></ul></div>
+<!-- ════════ El ritual ════════ -->
+<section id="ritual" class="py-20 lg:py-28 bg-white relative overflow-hidden">
+  <div class="max-w-7xl mx-auto px-5">
+    <div class="text-center max-w-2xl mx-auto mb-14">
+      <p class="reveal text-gold-600 font-semibold text-[13px] tracking-[.18em] uppercase mb-3">Cómo trabajamos</p>
+      <h2 class="reveal font-display text-4xl lg:text-[3.1rem] font-semibold text-ink tracking-[-0.02em]">
+        Tu visita, paso a paso
+      </h2>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-6 relative">
+      <div class="hidden md:block absolute top-[46px] left-[12%] right-[12%] h-px bg-gradient-to-r from-transparent via-gold-400 to-transparent"></div>
+
+      <div class="reveal relative bg-cream-50 border border-cream-300 rounded-2xl p-6 lift">
+        <span class="relative z-10 w-[52px] h-[52px] rounded-full bg-wine-700 text-cream-50 font-display text-xl font-semibold flex items-center justify-center shadow-lg shadow-wine-800/30">1</span>
+        <h3 class="font-display text-xl font-semibold mt-5 text-ink">Creá tu cuenta</h3>
+        <p class="text-[14.5px] text-ink-soft mt-2 leading-relaxed">Registrate con tu nombre, usuario y correo. Es gratis y tomás menos de un minuto.</p>
       </div>
-      <div class="mt-12 pt-8 border-t border-gray-800 text-center text-sm"><p>&copy; 2026 SpaGrace. Todos los derechos reservados.</p></div>
+
+      <div class="reveal relative bg-cream-50 border border-cream-300 rounded-2xl p-6 lift" data-d="1">
+        <span class="relative z-10 w-[52px] h-[52px] rounded-full bg-wine-700 text-cream-50 font-display text-xl font-semibold flex items-center justify-center shadow-lg shadow-wine-800/30">2</span>
+        <h3 class="font-display text-xl font-semibold mt-5 text-ink">Elegí servicio y horario</h3>
+        <p class="text-[14.5px] text-ink-soft mt-2 leading-relaxed">Mirá la agenda en vivo del equipo y elegí el terapeuta que prefieras.</p>
+      </div>
+
+      <div class="reveal relative bg-cream-50 border border-cream-300 rounded-2xl p-6 lift" data-d="2">
+        <span class="relative z-10 w-[52px] h-[52px] rounded-full bg-wine-700 text-cream-50 font-display text-xl font-semibold flex items-center justify-center shadow-lg shadow-wine-800/30">3</span>
+        <h3 class="font-display text-xl font-semibold mt-5 text-ink">Confirmación al instante</h3>
+        <p class="text-[14.5px] text-ink-soft mt-2 leading-relaxed">Recibís la confirmación y podés reprogramar hasta 6 horas antes.</p>
+      </div>
+
+      <div class="reveal relative bg-cream-50 border border-cream-300 rounded-2xl p-6 lift" data-d="3">
+        <span class="relative z-10 w-[52px] h-[52px] rounded-full bg-wine-700 text-cream-50 font-display text-xl font-semibold flex items-center justify-center shadow-lg shadow-wine-800/30">4</span>
+        <h3 class="font-display text-xl font-semibold mt-5 text-ink">Viví la experiencia</h3>
+        <p class="text-[14.5px] text-ink-soft mt-2 leading-relaxed">Pagás en recepción con QR, transferencia o efectivo en bolivianos.</p>
+      </div>
     </div>
-  </footer>
+  </div>
+</section>
 
-  <script>
-    // La landing es servida por el propio backend (useStaticAssets), así que
-    // la API es siempre el mismo origen. Sin hosts hardcodeados.
-    const API = window.location.origin;
-    // URL del dashboard Angular. Configurable con un <meta name="spa-app-url">;
-    // si no existe, se asume el mismo origen (despliegue único).
-    const APP = document.querySelector('meta[name="spa-app-url"]')?.content || window.location.origin;
+<!-- ════════ Testimonios ════════ -->
+<section class="py-20 lg:py-28 bg-cream-100">
+  <div class="max-w-7xl mx-auto px-5">
+    <div class="text-center max-w-2xl mx-auto mb-12">
+      <p class="reveal text-gold-600 font-semibold text-[13px] tracking-[.18em] uppercase mb-3">Testimonios</p>
+      <h2 class="reveal font-display text-4xl font-semibold text-ink tracking-[-0.02em]">Lo que dicen en Bolivia</h2>
+    </div>
 
-    const services = [
-      { nombre: 'Masajes Relajantes', descripcion: 'Desconectá del estrés con nuestras técnicas de masaje.', duracion: '60 min', precio: 'Bs. 120', icon: 'fa-hands' },
-      { nombre: 'Faciales Premium', descripcion: 'Tratamiento facial personalizado para tu tipo de piel.', duracion: '45 min', precio: 'Bs. 150', icon: 'fa-spa' },
-      { nombre: 'Aromaterapia', descripcion: 'Terapia con aceites esenciales para equilibrar cuerpo y mente.', duracion: '50 min', precio: 'Bs. 130', icon: 'fa-leaf' },
-      { nombre: 'Sauna y Baño Turco', descripcion: 'Relajación total con circuito de aguas termales.', duracion: '90 min', precio: 'Bs. 200', icon: 'fa-hot-tub' },
-      { nombre: 'Reflexología', descripcion: 'Masaje podal que estimula puntos de energía del cuerpo.', duracion: '40 min', precio: 'Bs. 100', icon: 'fa-shoe-prints' },
-      { nombre: 'Tratamiento Corporal', descripcion: 'Exfoliación e hidratación profunda de pies a cabeza.', duracion: '75 min', precio: 'Bs. 180', icon: 'fa-hand-sparkles' },
-    ];
-
-    const grid = document.getElementById('services-grid');
-    services.forEach(s => {
-      const div = document.createElement('div');
-      div.className = 'bg-white rounded-2xl p-6 shadow-sm border border-gray-100 card-hover fade-in';
-      div.innerHTML = `
-        <div class="w-12 h-12 bg-rosewood-100 rounded-xl flex items-center justify-center mb-4"><i class="fas ${s.icon} text-rosewood-600 text-lg"></i></div>
-        <h3 class="text-xl font-semibold text-gray-900">${s.nombre}</h3>
-        <p class="mt-2 text-gray-500 text-sm">${s.descripcion}</p>
-        <div class="mt-4 flex justify-between items-center pt-4 border-t border-gray-100">
-          <span class="text-sm text-gray-400"><i class="far fa-clock mr-1"></i>${s.duracion}</span>
-          <span class="text-lg font-bold text-rosewood-600">${s.precio}</span>
+    <div class="grid md:grid-cols-3 gap-6">
+      <figure class="reveal bg-white rounded-2xl p-7 border border-cream-300 lift">
+        <div class="flex gap-1 text-gold-500 mb-4">
+          <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
         </div>
-      `;
-      grid.appendChild(div);
-      setTimeout(() => div.classList.add('show'), 100);
+        <blockquote class="text-ink-soft leading-relaxed text-[15px]">
+          “El masaje de quinoa me salvó la espalda después de tanto trabajo.
+          La atención fue de primer nivel y el lugar es hermoso.”
+        </blockquote>
+        <figcaption class="mt-6 flex items-center gap-3">
+          <span class="w-10 h-10 rounded-full bg-wine-100 text-wine-700 font-semibold flex items-center justify-center text-sm">MG</span>
+          <div><p class="font-semibold text-ink text-[14.5px]">María Gabriela C.</p><p class="text-[12.5px] text-ink-mute">La Paz</p></div>
+        </figcaption>
+      </figure>
+
+      <figure class="reveal bg-white rounded-2xl p-7 border border-cream-300 lift" data-d="1">
+        <div class="flex gap-1 text-gold-500 mb-4">
+          <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+        </div>
+        <blockquote class="text-ink-soft leading-relaxed text-[15px]">
+          “Reservé por la web en dos minutos y me confirmaron al instante.
+          La aromaterapia con yerba menta es otro nivel.”
+        </blockquote>
+        <figcaption class="mt-6 flex items-center gap-3">
+          <span class="w-10 h-10 rounded-full bg-wine-100 text-wine-700 font-semibold flex items-center justify-center text-sm">CR</span>
+          <div><p class="font-semibold text-ink text-[14.5px]">Carlos Rodrigo T.</p><p class="text-[12.5px] text-ink-mute">Santa Cruz</p></div>
+        </figcaption>
+      </figure>
+
+      <figure class="reveal bg-white rounded-2xl p-7 border border-cream-300 lift" data-d="2">
+        <div class="flex gap-1 text-gold-500 mb-4">
+          <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+        </div>
+        <blockquote class="text-ink-soft leading-relaxed text-[15px]">
+          “Voy cada mes con la membresía. Me encanta que el facial use
+          productos nacionales, se nota la diferencia.”
+        </blockquote>
+        <figcaption class="mt-6 flex items-center gap-3">
+          <span class="w-10 h-10 rounded-full bg-wine-100 text-wine-700 font-semibold flex items-center justify-center text-sm">LM</span>
+          <div><p class="font-semibold text-ink text-[14.5px]">Laura Milenka S.</p><p class="text-[12.5px] text-ink-mute">Cochabamba</p></div>
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ Membresías ════════ -->
+<section id="membresias" class="py-20 lg:py-28">
+  <div class="max-w-7xl mx-auto px-5">
+    <div class="text-center max-w-2xl mx-auto mb-14">
+      <p class="reveal text-gold-600 font-semibold text-[13px] tracking-[.18em] uppercase mb-3">Membresías</p>
+      <h2 class="reveal font-display text-4xl lg:text-[3.1rem] font-semibold text-ink tracking-[-0.02em]">
+        Planes en bolivianos
+      </h2>
+      <p class="reveal mt-4 text-ink-soft">Sin permanencia mínima. Cancelás cuando quieras.</p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6 items-start">
+      <div class="reveal bg-white border border-cream-300 rounded-2xl p-8 lift">
+        <p class="font-display text-xl font-semibold text-ink">Sesión suelta</p>
+        <p class="text-[14px] text-ink-mute mt-1">Ideal para probar</p>
+        <p class="mt-6 font-display text-5xl font-semibold text-wine-700">Bs. 120</p>
+        <p class="text-[13px] text-ink-mute mt-1">por visita</p>
+        <ul class="mt-7 space-y-3 text-[14.5px] text-ink-soft">
+          <li class="flex gap-3"><i class="fas fa-check text-gold-500 mt-1"></i> 1 tratamiento a elección</li>
+          <li class="flex gap-3"><i class="fas fa-check text-gold-500 mt-1"></i> Valoración inicial</li>
+          <li class="flex gap-3"><i class="fas fa-check text-gold-500 mt-1"></i> Té de coca de cortesía</li>
+        </ul>
+        <a href="#registro" class="btn-ghost w-full mt-8">Reservar</a>
+      </div>
+
+      <div class="reveal relative bg-wine-800 text-cream-50 rounded-2xl p-8 lift shadow-[0_40px_80px_-38px_rgba(51,10,27,.9)] md:-mt-4" data-d="1">
+        <span class="absolute top-5 right-5 bg-gold-500 text-wine-950 text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">Popular</span>
+        <p class="font-display text-xl font-semibold">Pack Bienestar</p>
+        <p class="text-[14px] text-cream-300 mt-1">4 sesiones al mes</p>
+        <p class="mt-6 font-display text-5xl font-semibold text-gold-400">Bs. 399</p>
+        <p class="text-[13px] text-cream-300 mt-1"> Bs. 100 por sesión</p>
+        <ul class="mt-7 space-y-3 text-[14.5px] text-cream-100">
+          <li class="flex gap-3"><i class="fas fa-check text-gold-400 mt-1"></i> 4 tratamientos mensuales</li>
+          <li class="flex gap-3"><i class="fas fa-check text-gold-400 mt-1"></i> 15% en productos de la tienda</li>
+          <li class="flex gap-3"><i class="fas fa-check text-gold-400 mt-1"></i> Agenda prioritaria</li>
+          <li class="flex gap-3"><i class="fas fa-check text-gold-400 mt-1"></i> Invitá a una persona al mes</li>
+        </ul>
+        <a href="#registro" class="w-full mt-8 bg-gold-500 hover:bg-gold-400 text-wine-950 font-semibold rounded-xl py-3.5 flex items-center justify-center gap-2 transition">
+          Empezar ahora
+        </a>
+      </div>
+
+      <div class="reveal bg-white border border-cream-300 rounded-2xl p-8 lift" data-d="2">
+        <p class="font-display text-xl font-semibold text-ink">Ritual Completo</p>
+        <p class="text-[14px] text-ink-mute mt-1">Para el año</p>
+        <p class="mt-6 font-display text-5xl font-semibold text-wine-700">Bs. 890</p>
+        <p class="text-[13px] text-ink-mute mt-1">al mes</p>
+        <ul class="mt-7 space-y-3 text-[14.5px] text-ink-soft">
+          <li class="flex gap-3"><i class="fas fa-check text-gold-500 mt-1"></i> Sesiones ilimitadas</li>
+          <li class="flex gap-3"><i class="fas fa-check text-gold-500 mt-1"></i> Terapeuta asignado</li>
+          <li class="flex gap-3"><i class="fas fa-check text-gold-500 mt-1"></i> 25% en productos</li>
+          <li class="flex gap-3"><i class="fas fa-check text-gold-500 mt-1"></i> Acceso al área termal</li>
+        </ul>
+        <a href="#registro" class="btn-ghost w-full mt-8">Consultar</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ Registro + acceso ════════ -->
+<section id="registro" class="py-20 lg:py-28 bg-white relative overflow-hidden">
+  <div class="absolute inset-0 pointer-events-none" style="background:radial-gradient(700px 420px at 85% 20%, rgba(200,164,92,.14), transparent 65%)"></div>
+
+  <div class="relative max-w-7xl mx-auto px-5">
+    <div class="lg:grid lg:grid-cols-2 lg:gap-16 items-start">
+
+      <div class="mb-12 lg:mb-0">
+        <p class="reveal text-gold-600 font-semibold text-[13px] tracking-[.18em] uppercase mb-3">Acceso al sistema</p>
+        <h2 class="reveal font-display text-4xl lg:text-[3.1rem] leading-tight font-semibold text-ink tracking-[-0.02em]">
+          Creá tu cuenta<br>y reservá hoy mismo
+        </h2>
+        <div class="reveal gold-rule w-32 my-6"></div>
+        <p class="reveal text-ink-soft leading-relaxed max-w-md">
+          Con tu cuenta accedés al dashboard personal para reservar turnos,
+          ver tu historial de tratamientos y recibir promociones exclusivas.
+        </p>
+
+        <div class="reveal mt-9 space-y-5 max-w-md">
+          <div class="flex gap-4">
+            <span class="w-11 h-11 shrink-0 rounded-xl bg-cream-100 border border-cream-300 flex items-center justify-center">
+              <i class="fas fa-calendar-check text-wine-600"></i>
+            </span>
+            <div>
+              <p class="font-semibold text-ink text-[15px]">Reservá turnos online</p>
+              <p class="text-[14px] text-ink-mute mt-0.5">Elegí fecha, hora, servicio y terapeuta.</p>
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <span class="w-11 h-11 shrink-0 rounded-xl bg-cream-100 border border-cream-300 flex items-center justify-center">
+              <i class="fas fa-notes-medical text-wine-600"></i>
+            </span>
+            <div>
+              <p class="font-semibold text-ink text-[15px]">Historial clínico</p>
+              <p class="text-[14px] text-ink-mute mt-0.5">Diagnóstico, tratamiento y notas de cada sesión.</p>
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <span class="w-11 h-11 shrink-0 rounded-xl bg-cream-100 border border-cream-300 flex items-center justify-center">
+              <i class="fas fa-gift text-wine-600"></i>
+            </span>
+            <div>
+              <p class="font-semibold text-ink text-[15px]">Promociones exclusivas</p>
+              <p class="text-[14px] text-ink-mute mt-0.5">Descuentos y packs solo para clientes registrados.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="reveal mt-10 bg-cream-50 border border-cream-300 rounded-2xl p-5 max-w-md">
+          <p class="text-[14px] text-ink-soft"><i class="fas fa-shield-halved text-wine-600 mr-2"></i>
+            Tus datos se guardan cifrados. Nunca compartimos tu información.</p>
+        </div>
+      </div>
+
+      <!-- Formulario de registro -->
+      <div class="reveal bg-cream-50 border border-cream-300 rounded-2xl p-7 sm:p-9 shadow-[0_36px_76px_-44px_rgba(51,10,27,.55)]">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h3 class="font-display text-2xl font-semibold text-ink">Registrate</h3>
+            <p class="text-[13.5px] text-ink-mute mt-1">Toma menos de un minuto</p>
+          </div>
+          <button onclick="openLogin()" class="text-[13.5px] font-semibold text-wine-600 hover:text-wine-700 underline underline-offset-4">
+            Ya tengo cuenta
+          </button>
+        </div>
+
+        <!-- Éxito -->
+        <div id="register-success" class="hidden text-center py-8">
+          <span class="inline-flex w-16 h-16 rounded-full bg-green-50 border border-green-200 items-center justify-center mb-4">
+            <i class="fas fa-check text-green-600 text-2xl"></i>
+          </span>
+          <h4 class="font-display text-xl font-semibold text-ink">¡Registro exitoso!</h4>
+          <p class="text-ink-soft text-[14.5px] mt-2">Te estamos llevando a tu dashboard…</p>
+          <div class="mt-5 flex justify-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-wine-500 animate-bounce"></span>
+            <span class="w-2 h-2 rounded-full bg-wine-500 animate-bounce [animation-delay:.15s]"></span>
+            <span class="w-2 h-2 rounded-full bg-wine-500 animate-bounce [animation-delay:.3s]"></span>
+          </div>
+        </div>
+
+        <form id="register-form" novalidate class="space-y-4">
+          <div>
+            <label class="lbl" for="nombre">Nombre completo *</label>
+            <input class="field" type="text" id="nombre" name="nombre" autocomplete="name"
+                   placeholder="Ej. Ana Lucía Flores" required>
+            <p class="msg" id="err-nombre">Ingresá tu nombre completo.</p>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="lbl" for="username">Usuario *</label>
+              <input class="field" type="text" id="username" name="username" autocomplete="username"
+                     placeholder="ana.flores" required>
+              <p class="hint">Será tu usuario para iniciar sesión.</p>
+              <p class="msg" id="err-username">Ingresá un usuario.</p>
+            </div>
+            <div>
+              <label class="lbl" for="telefono">Teléfono</label>
+              <input class="field" type="tel" id="telefono" name="telefono" autocomplete="tel"
+                     placeholder="777 77777" inputmode="numeric">
+              <p class="hint">Formato boliviano, 8 dígitos.</p>
+              <p class="msg" id="err-telefono">Usá 8 dígitos sin el +591.</p>
+            </div>
+          </div>
+
+          <div>
+            <label class="lbl" for="email">Correo electrónico *</label>
+            <input class="field" type="email" id="email" name="email" autocomplete="email"
+                   placeholder="ana@correo.com" required>
+            <p class="msg" id="err-email">Ingresá un correo válido.</p>
+          </div>
+
+          <div>
+            <label class="lbl" for="password">Contraseña *</label>
+            <input class="field" type="password" id="password" name="password"
+                   autocomplete="new-password" placeholder="••••••••" minlength="6" required>
+            <p class="hint">Mínimo 6 caracteres.</p>
+            <p class="msg" id="err-password">La contraseña debe tener al menos 6 caracteres.</p>
+          </div>
+
+          <div id="register-error"
+               class="hidden bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-[14px]"></div>
+
+          <button type="submit" id="register-btn" class="btn-primary w-full">
+            <i class="fas fa-user-plus"></i> Crear cuenta y acceder
+          </button>
+
+          <p class="text-center text-[13.5px] text-ink-mute pt-1">
+            Al registrarte aceptás nuestros
+            <a href="#" class="text-wine-600 font-semibold hover:underline">términos y condiciones</a>.
+          </p>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════ Contacto / Footer ════════ -->
+<footer id="contacto" class="bg-wine-950 text-cream-200 pt-20 pb-10 relative overflow-hidden">
+  <div class="absolute inset-0 pointer-events-none opacity-60"
+       style="background:radial-gradient(760px 420px at 15% 0%, rgba(163,52,87,.35), transparent 62%)"></div>
+
+  <div class="relative max-w-7xl mx-auto px-5">
+    <div class="grid lg:grid-cols-4 gap-10 pb-12 border-b border-white/10">
+      <div class="lg:col-span-1">
+        <div class="flex items-center gap-2.5 mb-4">
+          <span class="w-9 h-9 rounded-full bg-gold-500 flex items-center justify-center text-wine-950">
+            <i class="fas fa-spa text-[13px]"></i>
+          </span>
+          <span class="font-display text-[22px] font-semibold text-cream-50">Spa Grace</span>
+        </div>
+        <p class="text-[14.5px] leading-relaxed text-cream-300 max-w-xs">
+          Bienestar integral con identidad boliviana. Productos naturales,
+          terapeutas certificados y un lugar para detenerte.
+        </p>
+        <div class="flex gap-3 mt-5">
+          <a href="#" aria-label="Instagram" class="w-10 h-10 rounded-lg border border-white/15 flex items-center justify-center hover:bg-gold-500 hover:text-wine-950 hover:border-gold-500 transition"><i class="fab fa-instagram"></i></a>
+          <a href="#" aria-label="Facebook" class="w-10 h-10 rounded-lg border border-white/15 flex items-center justify-center hover:bg-gold-500 hover:text-wine-950 hover:border-gold-500 transition"><i class="fab fa-facebook-f"></i></a>
+          <a href="https://wa.me/59177777777" target="_blank" rel="noopener" aria-label="WhatsApp" class="w-10 h-10 rounded-lg border border-white/15 flex items-center justify-center hover:bg-gold-500 hover:text-wine-950 hover:border-gold-500 transition"><i class="fab fa-whatsapp"></i></a>
+        </div>
+      </div>
+
+      <div>
+        <h4 class="font-display text-lg font-semibold text-cream-50 mb-4">Servicios</h4>
+        <ul class="space-y-2.5 text-[14.5px] text-cream-300">
+          <li><a href="#servicios" class="hover:text-gold-400 transition">Masajes terapéuticos</a></li>
+          <li><a href="#servicios" class="hover:text-gold-400 transition">Faciales premium</a></li>
+          <li><a href="#servicios" class="hover:text-gold-400 transition">Aromaterapia andina</a></li>
+          <li><a href="#servicios" class="hover:text-gold-400 transition">Reflexología</a></li>
+          <li><a href="#servicios" class="hover:text-gold-400 transition">Sauna y baño turco</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="font-display text-lg font-semibold text-cream-50 mb-4">Horarios</h4>
+        <ul class="space-y-2.5 text-[14.5px] text-cream-300">
+          <li class="flex justify-between max-w-[200px]"><span>Lun – Vie</span><span class="text-cream-100">8:00 – 20:00</span></li>
+          <li class="flex justify-between max-w-[200px]"><span>Sábado</span><span class="text-cream-100">9:00 – 18:00</span></li>
+          <li class="flex justify-between max-w-[200px]"><span>Domingo</span><span class="text-cream-100">Cerrado</span></li>
+        </ul>
+        <div class="mt-6 p-4 rounded-xl bg-white/5 border border-white/10">
+          <p class="text-[13px] text-cream-300 mb-2">Aceptamos</p>
+          <div class="flex flex-wrap gap-2 text-[11.5px]">
+            <span class="px-2.5 py-1 rounded-md bg-white/10 border border-white/10">QR</span>
+            <span class="px-2.5 py-1 rounded-md bg-white/10 border border-white/10">Transferencia</span>
+            <span class="px-2.5 py-1 rounded-md bg-white/10 border border-white/10">Efectivo Bs.</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h4 class="font-display text-lg font-semibold text-cream-50 mb-4">Contacto</h4>
+        <ul class="space-y-3.5 text-[14.5px] text-cream-300">
+          <li class="flex gap-3"><i class="fas fa-map-marker-alt text-gold-400 mt-1"></i>
+            <span>Av. Busch 1234, Zona Calacoto<br>La Paz, Bolivia</span></li>
+          <li class="flex gap-3"><i class="fas fa-phone text-gold-400 mt-1"></i>
+            <a href="https://wa.me/59177777777" target="_blank" rel="noopener" class="hover:text-gold-400 transition">+591 777 77777</a></li>
+          <li class="flex gap-3"><i class="fas fa-envelope text-gold-400 mt-1"></i>
+            <a href="mailto:hola@spagrace.bo" class="hover:text-gold-400 transition">hola@spagrace.bo</a></li>
+          <li class="flex gap-3"><i class="fas fa-file-invoice text-gold-400 mt-1"></i>
+            <span>NIT 1234567023 · Facturamos con NIT</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="pt-7 flex flex-col sm:flex-row items-center justify-between gap-4 text-[13px] text-cream-400">
+      <p>© <span id="year"></span> Spa Grace · La Paz, Bolivia. Todos los derechos reservados.</p>
+      <div class="flex gap-6">
+        <a href="#" class="hover:text-gold-400 transition">Términos</a>
+        <a href="#" class="hover:text-gold-400 transition">Privacidad</a>
+        <button onclick="openLogin()" class="hover:text-gold-400 transition">Iniciar sesión</button>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ════════ Modal de login ════════ -->
+<div id="login-modal" class="hidden fixed inset-0 z-[70] overlay flex items-center justify-center p-4">
+  <div class="modal-in bg-white rounded-2xl shadow-2xl w-full max-w-[420px] overflow-hidden relative">
+    <button onclick="closeLogin()" aria-label="Cerrar"
+            class="absolute top-4 right-4 w-9 h-9 rounded-lg text-ink-mute hover:text-ink hover:bg-cream-100 transition flex items-center justify-center z-10">
+      <i class="fas fa-xmark"></i>
+    </button>
+
+    <div class="bg-wine-800 text-cream-50 px-7 py-7 relative overflow-hidden">
+      <div class="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-gold-500/20"></div>
+      <div class="relative">
+        <span class="w-11 h-11 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center mb-3.5">
+          <i class="fas fa-spa text-gold-400"></i>
+        </span>
+        <h2 class="font-display text-2xl font-semibold">Bienvenido de vuelta</h2>
+        <p class="text-cream-300 text-[14px] mt-1">Ingresá para gestionar tus turnos</p>
+      </div>
+    </div>
+
+    <div class="p-7">
+      <div id="login-error"
+           class="hidden bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-[14px] mb-4"></div>
+
+      <form id="login-form" novalidate class="space-y-4">
+        <div>
+          <label class="lbl" for="login-username">Usuario</label>
+          <input class="field" type="text" id="login-username" autocomplete="username"
+                 placeholder="Tu usuario" required>
+        </div>
+        <div>
+          <label class="lbl" for="login-password">Contraseña</label>
+          <input class="field" type="password" id="login-password" autocomplete="current-password"
+                 placeholder="••••••••" required>
+        </div>
+
+        <div class="flex items-center justify-between text-[13.5px]">
+          <label class="flex items-center gap-2 text-ink-soft cursor-pointer">
+            <input type="checkbox" class="rounded border-cream-300 text-wine-600 focus:ring-gold-400">
+            Recordarme
+          </label>
+          <a href="#" class="text-wine-600 font-semibold hover:underline">¿Olvidaste tu clave?</a>
+        </div>
+
+        <button type="submit" id="login-btn" class="btn-primary w-full">
+          <i class="fas fa-right-to-bracket"></i> Iniciar sesión
+        </button>
+      </form>
+
+      <div class="divider-or my-5">o</div>
+
+      <p class="text-center text-[14px] text-ink-soft">
+        ¿No tenés cuenta?
+        <button onclick="closeLogin(); goRegister()" class="text-wine-600 font-semibold hover:underline ml-1">Registrate gratis</button>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   Configuración de endpoints.
+   - Vacío  → mismo origen (local: la landing la sirve el backend).
+   - Rellenar en producción vía las etiquetas <meta> del <head>.
+   ══════════════════════════════════════════════════════════════ */
+const meta = n => (document.querySelector(`meta[name="${n}"]`)?.content || '').trim();
+const API  = meta('api-url')     || window.location.origin;
+const APP  = meta('spa-app-url') || window.location.origin;
+
+document.getElementById('year').textContent = new Date().getFullYear();
+
+/* ── Catálogo de respaldo si la API no responde ── */
+const FALLBACK_SERVICES = [
+  { id:1, nombre:'Masajes Relajantes',   descripcion:'Desconectá del estrés con técnicas de masaje profundas y aceites esenciales.', duracion:60, precio:120, icon:'fa-hands' },
+  { id:2, nombre:'Faciales Premium',     descripcion:'Tratamiento facial personalizado según tu tipo de piel, con arcillas andinas.', duracion:45, precio:150, icon:'fa-spa' },
+  { id:3, nombre:'Aromaterapia Andina',  descripcion:'Terapia con aceites de yerba menta y muña para equilibrar cuerpo y mente.',  duracion:50, precio:130, icon:'fa-leaf' },
+  { id:4, nombre:'Sauna y Baño Turco',   descripcion:'Relajación total con circuito de aguas termales y salones de vapor.',         duracion:90, precio:200, icon:'fa-hot-tub' },
+  { id:5, nombre:'Reflexología',         descripcion:'Masaje podal que estimula puntos de energía del cuerpo.',                      duracion:40, precio:100, icon:'fa-shoe-prints' },
+  { id:6, nombre:'Ritual de Quinoa',     descripcion:'Exfoliación e hidratación profunda con productos 100% bolivianos.',           duracion:75, precio:180, icon:'fa-hand-sparkles' }
+];
+
+const ICONS = ['fa-hands','fa-spa','fa-leaf','fa-hot-tub','fa-shoe-prints','fa-hand-sparkles','fa-water','fa-fire'];
+const money = n => 'Bs. ' + Number(n).toLocaleString('es-BO', { maximumFractionDigits: 0 });
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function renderServices(list) {
+  const grid = document.getElementById('services-grid');
+  grid.innerHTML = list.map((s, i) => `
+    <article class="reveal group bg-white border border-cream-300 rounded-2xl overflow-hidden lift flex flex-col" data-d="${i % 3}">
+      <div class="h-40 overflow-hidden bg-gradient-to-br from-cream-100 to-cream-200 relative">
+        <img class="img-mask w-full h-full object-cover"
+             src="https://images.unsplash.com/photo-${['1600334089648-b0d9d3028eb2','1570172619644-dfd03ed5d881','1596178060810-72f53ce9a65c','1540555700478-4be289fbecef','1519823551278-64ac92734fb1','1512290923902-8a9f81dc236c','1544161515-4ab6ce6db874','1517838277536-f5f99be501cd'][i % 8]}?auto=format&fit=crop&w=800&q=70"
+             alt="${esc(s.nombre)}" loading="lazy">
+        <span class="absolute top-3 left-3 bg-white/92 backdrop-blur px-3 py-1 rounded-full text-[12px] font-semibold text-wine-700 shadow-sm">
+          <i class="far fa-clock mr-1.5"></i>${esc(s.duracion)} min
+        </span>
+      </div>
+      <div class="p-6 flex flex-col flex-1">
+        <div class="flex items-start justify-between gap-3">
+          <h3 class="font-display text-xl font-semibold text-ink leading-snug">${esc(s.nombre)}</h3>
+          <span class="shrink-0 w-10 h-10 rounded-xl bg-cream-100 border border-cream-300 flex items-center justify-center">
+            <i class="fas ${ICONS[i % ICONS.length]} text-wine-600 text-[15px]"></i>
+          </span>
+        </div>
+        <p class="text-[14.5px] text-ink-soft leading-relaxed mt-2.5 flex-1">${esc(s.descripcion || 'Tratamiento personalizado con productos naturales.')}</p>
+        <div class="flex items-center justify-between mt-5 pt-5 border-t border-cream-200">
+          <span class="font-display text-2xl font-semibold text-wine-700">${money(s.precio)}</span>
+          <button onclick="goRegister()" class="text-[14px] font-semibold text-gold-600 hover:text-wine-600 transition">
+            Reservar <i class="fas fa-arrow-right ml-1"></i>
+          </button>
+        </div>
+      </div>
+    </article>`).join('');
+
+  grid.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+}
+
+async function loadServices() {
+  try {
+    const res = await fetch(API + '/servicios', { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    // Solo servicios activos y de nivel raíz (sin padre).
+    const activos = (Array.isArray(data) ? data : [])
+      .filter(s => s.activo !== false && !s.parent_servicio_id);
+    if (!activos.length) throw new Error('vacío');
+    renderServices(activos);
+  } catch {
+    renderServices(FALLBACK_SERVICES);
+  }
+}
+loadServices();
+
+/* ── Navbar ── */
+const nav = document.getElementById('nav');
+addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 12));
+document.getElementById('burger').onclick = () =>
+  document.getElementById('mobile-menu').classList.toggle('hidden');
+document.querySelectorAll('#mobile-menu a').forEach(a =>
+  a.addEventListener('click', () => document.getElementById('mobile-menu').classList.add('hidden')));
+
+/* ── Reveal on scroll ── */
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('show'); observer.unobserve(e.target); } });
+}, { threshold: .12, rootMargin: '0px 0px -40px' });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+/* ── Modal ── */
+function openLogin() {
+  document.getElementById('login-modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('login-username').focus(), 120);
+}
+function closeLogin() {
+  document.getElementById('login-modal').classList.add('hidden');
+  document.getElementById('login-error').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+function goRegister() {
+  document.getElementById('registro').scrollIntoView({ behavior: 'smooth' });
+}
+document.getElementById('login-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeLogin();
+});
+addEventListener('keydown', e => { if (e.key === 'Escape') closeLogin(); });
+
+/* ── Utilidades de validación ── */
+function setErr(id, on, message) {
+  const input = document.getElementById(id);
+  const box = document.getElementById('err-' + id);
+  if (input) input.classList.toggle('err', on);
+  if (box) {
+    if (message) box.textContent = message;
+    box.style.display = on ? 'block' : 'none';
+  }
+}
+function showFormError(el, text) {
+  el.textContent = text;
+  el.classList.remove('hidden');
+}
+function apiErrorMessage(data, fallback) {
+  const m = data && data.message;
+  if (Array.isArray(m)) return m[0];
+  if (typeof m === 'string' && m.trim()) return m;
+  return fallback;
+}
+const btnLoading = (btn, on, html) => {
+  btn.disabled = on;
+  btn.innerHTML = on
+    ? '<i class="fas fa-spinner fa-spin"></i> ' + html
+    : btn.dataset.label;
+};
+
+/* ── Login ── */
+const loginBtn = document.getElementById('login-btn');
+loginBtn.dataset.label = loginBtn.innerHTML;
+
+document.getElementById('login-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const errBox = document.getElementById('login-error');
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+
+  if (!username || !password) {
+    showFormError(errBox, 'Completá tu usuario y contraseña.');
+    return;
+  }
+
+  errBox.classList.add('hidden');
+  btnLoading(loginBtn, true, 'Ingresando…');
+
+  try {
+    const res = await fetch(API + '/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
     });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(apiErrorMessage(data, 'Credenciales inválidas.'));
+    if (!data.accessToken) throw new Error('La respuesta del servidor no incluyó el token.');
 
-    // Mobile Menu
-    document.getElementById('mobile-menu-btn').addEventListener('click', () => {
-      document.getElementById('mobile-menu').classList.toggle('hidden');
+    localStorage.setItem('accessToken', data.accessToken);
+    window.location.href = APP + '/dashboard?token=' + encodeURIComponent(data.accessToken);
+  } catch (err) {
+    showFormError(errBox, err.message || 'No se pudo iniciar sesión. Intentá nuevamente.');
+    btnLoading(loginBtn, false, '');
+  }
+});
+
+/* ── Registro ── */
+const registerBtn = document.getElementById('register-btn');
+registerBtn.dataset.label = registerBtn.innerHTML;
+
+document.getElementById('register-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const errBox = document.getElementById('register-error');
+  errBox.classList.add('hidden');
+
+  const nombre    = document.getElementById('nombre').value.trim();
+  const username  = document.getElementById('username').value.trim();
+  const email     = document.getElementById('email').value.trim();
+  const password  = document.getElementById('password').value;
+  const telefono  = document.getElementById('telefono').value.trim();
+
+  const errs = [];
+  setErr('nombre',    !nombre, 'Ingresá tu nombre completo.');
+  if (!nombre) errs.push('nombre');
+
+  setErr('username',  !username, 'Ingresá un usuario.');
+  if (!username) errs.push('username');
+
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+  setErr('email', !emailOk, 'Ingresá un correo electrónico válido.');
+  if (!emailOk) errs.push('email');
+
+  setErr('password', password.length < 6, 'La contraseña debe tener al menos 6 caracteres.');
+  if (password.length < 6) errs.push('password');
+
+  const telOk = !telefono || /^\d{7,8}$/.test(telefono.replace(/\s+/g, ''));
+  setErr('telefono', !telOk, 'Usá 8 dígitos sin el +591.');
+  if (!telOk) errs.push('telefono');
+
+  if (errs.length) {
+    document.getElementById(errs[0]).focus();
+    return;
+  }
+
+  btnLoading(registerBtn, true, 'Creando cuenta…');
+
+  try {
+    const res = await fetch(API + '/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre, username, email, password,
+        ...(telefono ? { telefono } : {})
+      })
     });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(apiErrorMessage(data, 'No se pudo crear la cuenta.'));
 
-    // Login Modal
-    function openLogin() { document.getElementById('login-modal').classList.remove('hidden'); }
-    function closeLogin() { document.getElementById('login-modal').classList.add('hidden'); document.getElementById('login-error').classList.add('hidden'); }
-    document.getElementById('login-modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeLogin(); });
-
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('login-btn');
-      const errDiv = document.getElementById('login-error');
-      btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Ingresando...';
-      errDiv.classList.add('hidden');
-      try {
-        const res = await fetch(API + '/auth/login', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: document.getElementById('login-username').value, password: document.getElementById('login-password').value }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Credenciales inválidas');
-        window.location.href = APP + '/dashboard?token=' + encodeURIComponent(data.accessToken);
-      } catch (err) {
-        errDiv.textContent = err.message; errDiv.classList.remove('hidden');
-        btn.disabled = false; btn.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>Iniciar Sesión';
-      }
+    // Login automático para entrar directo al dashboard.
+    const logRes = await fetch(API + '/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
     });
-
-    // Registration + Auto Login
-    document.getElementById('register-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('register-btn');
-      const errDiv = document.getElementById('register-error');
-      btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Creando cuenta...';
-      errDiv.classList.add('hidden');
-      try {
-        const regRes = await fetch(API + '/auth/register', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            nombre: document.getElementById('nombre').value,
-            email: document.getElementById('email').value,
-            username: document.getElementById('username').value,
-            password: document.getElementById('password').value,
-            telefono: document.getElementById('telefono').value || undefined,
-          }),
-        });
-        const regData = await regRes.json();
-        if (!regRes.ok) throw new Error(regData.message || 'Error al registrar');
-
-        document.getElementById('register-success').classList.remove('hidden');
-        document.getElementById('register-form').classList.add('hidden');
-
-        const logRes = await fetch(API + '/auth/login', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: document.getElementById('username').value, password: document.getElementById('password').value }),
-        });
-        const logData = await logRes.json();
-        if (!logRes.ok) throw new Error('Registro exitoso, pero no se pudo iniciar sesión. Redirigiendo al login...');
-
-        setTimeout(() => { window.location.href = APP + '/dashboard?token=' + encodeURIComponent(logData.accessToken); }, 1500);
-      } catch (err) {
-        document.getElementById('register-success').classList.add('hidden');
-        document.getElementById('register-form').classList.remove('hidden');
-        errDiv.textContent = err.message; errDiv.classList.remove('hidden');
-        btn.disabled = false; btn.innerHTML = '<i class="fas fa-user-plus mr-2"></i>Crear Cuenta y Acceder';
-      }
-    });
-
-    // Scroll animations
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('show'); });
-    }, { threshold: 0.1 });
-    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-
-    // Check URL for token (from dashboard redirect if already logged in via Angular)
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('registered') === 'true') {
-      setTimeout(() => document.getElementById('registro').scrollIntoView({ behavior: 'smooth' }), 500);
+    const logData = await logRes.json().catch(() => ({}));
+    if (!logRes.ok) {
+      showFormError(errBox, 'Cuenta creada. Iniciá sesión para continuar.');
+      btnLoading(registerBtn, false, '');
+      setTimeout(openLogin, 900);
+      return;
     }
-  </script>
+
+    localStorage.setItem('accessToken', logData.accessToken);
+    document.getElementById('register-form').classList.add('hidden');
+    document.getElementById('register-success').classList.remove('hidden');
+
+    setTimeout(() => {
+      window.location.href = APP + '/dashboard?token=' + encodeURIComponent(logData.accessToken);
+    }, 1500);
+  } catch (err) {
+    showFormError(errBox, err.message || 'No se pudo crear la cuenta.');
+    btnLoading(registerBtn, false, '');
+  }
+});
+
+/* ── Limpieza de errores al escribir ── */
+['nombre','username','email','password','telefono'].forEach(id => {
+  document.getElementById(id)?.addEventListener('input', () => setErr(id, false));
+});
+
+/* ── Si volvemos con ?registered=true, enfocamos el formulario ── */
+if (new URLSearchParams(location.search).get('registered') === 'true') {
+  setTimeout(goRegister, 400);
+}
+</script>
 </body>
 </html>
