@@ -108,8 +108,16 @@ nada dentro del *bundle*.
 | `DB_SSL`                     | `true` (Aiven exige TLS)                                    |
 | `DB_SYNC`                    | `false` — el esquema ya está creado                         |
 
-**`spa-grace`** (la landing): `API_URL` y `APP_URL`, con las URLs públicas de la
-API y del dashboard.
+**`spa-grace`** (la landing):
+
+| Variable  | Valor                                            |
+| --------- | ------------------------------------------------ |
+| `API_URL` | `https://spa-grace-api.vercel.app`               |
+| `APP_URL` | `https://spa-grace-app.vercel.app`               |
+| `SITE_URL`| `https://spa-grace.vercel.app` (para `og:url` y `<link rel="canonical">`) |
+
+`landing/build.mjs` las inyecta en el HTML al construir `dist/` y copia además
+`robots.txt`; si falta alguna, se avisa y se conserva el valor por defecto.
 
 > Un cambio de variable **no surte efecto hasta que se vuelva a desplegar**.
 

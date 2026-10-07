@@ -1,0 +1,11 @@
+# Spa Grace — sitio público
+# https://spa-grace.vercel.app
+#
+# Es una landing de una sola página: todo el contenido está en `/`,
+# así que no hay rutas profundas que bloquear.
+#
+# El dashboard (`spa-grace-app.vercel.app`) y la API (`spa-grace-api.vercel.app`)
+# son orígenes distintos y se protegen con su propio robots.txt.
+
+User-agent: *
+Allow: /
