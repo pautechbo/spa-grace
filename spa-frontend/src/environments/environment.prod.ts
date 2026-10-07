@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
-  /** URL base de la API (NestJS). Ajustar antes de desplegar. */
-  apiUrl: 'https://api.spa-grace.example.com',
+  /** URL base de la API (NestJS). */
+  apiUrl: 'https://spa-grace-api.vercel.app',
 };

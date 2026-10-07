@@ -37,3 +37,6 @@ Thumbs.db
 # Temp
 temp/
 .tmp/
+
+# Vercel (vinculación local de proyectos, no es código)
+.vercel/

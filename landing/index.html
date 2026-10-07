@@ -7,11 +7,14 @@
   <meta name="description" content="Spa Grace — masajes, faciales y rituales de bienestar en Bolivia. Reservá tu turno online en La Paz, Cochabamba y Santa Cruz.">
 
   <!-- ── Configuración de entorno ──────────────────────────────────────────
-       En local la landing la sirve el propio backend, por lo que ambos
-       valores pueden quedar vacíos y se usa same-origin.
-       En producción (Vercel) se sobrescriben con la URL real de la API. -->
+       Valores por defecto de DESARROLLO: la landing la sirve el propio
+       backend, así que api-url vacío significa same-origin (localhost:3000),
+       y la app Angular corre en localhost:4200.
+
+       En producción (Vercel) `build.mjs` los sustituye por las URLs reales
+       tomando API_URL y APP_URL del entorno del proyecto. -->
   <meta name="api-url" content="">
-  <meta name="spa-app-url" content="">
+  <meta name="spa-app-url" content="http://localhost:4200">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">

@@ -1,0 +1,9 @@
+node_modules
+coverage
+.angular
+.env
+.env.*
+!.env.example
+*.log
+.git
+.vercel
